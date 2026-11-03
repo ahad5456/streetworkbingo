@@ -52,6 +52,16 @@ input{width:100%;min-height:46px;padding:8px 12px;border:1px solid var(--line);b
 .empty{text-align:center;color:var(--muted);padding:18px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
 .toast.show{opacity:1}
+canvas#fx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4}
+.wk{position:fixed;left:0;top:0;right:0;bottom:0;z-index:20;background:var(--bg);overflow:auto;padding:max(16px,env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+.wkIn{max-width:640px;margin:0 auto}
+.wkBig{background:var(--pri);color:var(--pri-ink);border-radius:18px;padding:18px;text-align:center;margin:10px 0 12px}
+.wkBig b{display:block;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:4.4rem;line-height:1;font-weight:800}
+.wkBig span{display:block;margin-top:4px}
+.wkIn h2{margin:0}
+#wkTxt{min-height:128px}
+.wkIn .btns{grid-template-columns:1fr;margin-top:12px}
+.wkIn button.big{min-height:56px;font-size:1.1rem}
 .bingo{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.9);background:var(--sun);color:#1D2733;border-radius:18px;padding:18px 30px;text-align:center;opacity:0;pointer-events:none;z-index:5;transition:opacity .2s,transform .2s;box-shadow:0 8px 30px rgba(0,0,0,.25);max-width:90%}
 .bingo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .bingo span{display:block;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:2.2rem;line-height:1.1}
@@ -107,7 +117,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <h2>Deine Bingo-Karte</h2>
 <div class="board" id="board"></div>
 <div class="act" id="act"></div>
-<p class="note">Reihe, Spalte oder Diagonale voll: +2 Bonus. Ganze Karte voll: +5 Bonus und eine neue Karte.</p>
+<p class="note">Reihe, Spalte oder Diagonale voll: +2 Bonus. Alle 8 Randfelder (Kreis): +4 Bonus. Ganze Karte voll: +5 Bonus und eine neue Karte.</p>
 
 <h2>Dein Stand</h2>
 <div class="stats">
@@ -122,50 +132,62 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 </div>
 <p class="note" style="margin-bottom:0"><strong>Am häufigsten gesehen</strong></p>
 <ul class="top" id="top"></ul>
-<p class="note">Zum Vergleichen im Team: Stand als Text kopieren und in euren Gruppenchat schicken. Deinen Namen schreibst du im Chat selbst dazu.</p>
+<p class="note">Zum Vergleichen im Team: Stand als Text kopieren und in euren Gruppenchat schicken. Deinen Namen schreibst du im Chat selbst dazu. Eine Woche läuft von Mittwoch 13:00 bis Mittwoch 13:00, dann erscheint der Wochenabschluss.</p>
 <div class="btns" style="grid-template-columns:1fr 1fr"><button class="primary" id="share">Stand kopieren</button><button id="toggleTxt">Text anzeigen</button></div>
 <textarea id="txt" readonly hidden aria-label="Stand als Text"></textarea>
 
-<details class="add"><summary>Eigene Aufgabe hinzufügen</summary>
-<div class="addrow"><input id="newT" maxlength="80" placeholder="Was kann man in der Stadt sehen?" aria-label="Neue Aufgabe"></div>
-<button class="primary" id="addT">Aufgabe hinzufügen</button>
-<p class="note">Eigene Aufgaben gelten nur auf diesem Gerät.</p>
-<ul class="mine" id="mine"></ul></details>
+
 
 <p class="note">Es geht nur ums Sehen. Bitte nichts fotografieren und niemanden ansprechen oder bloßstellen. Alle Aufgaben zählen auf Ehrenwort.</p>
 <p class="note"><button id="again">Neue Runde starten</button> Setzt die Runden-Punkte zurück, Tages- und Wochenstand und die heutigen Tausche bleiben.</p>
 <p class="note">Dein Spielstand liegt nur in diesem Browser auf diesem Gerät. Wenn du den Browserverlauf löschst, ist er weg.</p>
 </section>
 </main>
+<div class="wk" id="wk" role="dialog" aria-modal="true" aria-labelledby="wkT" hidden>
+<div class="wkIn">
+<p class="note" id="wkSub" style="margin:0"></p>
+<h2 id="wkT">Wochenabschluss</h2>
+<div class="wkBig"><b id="wkPts">0</b><span>Punkte in dieser Woche</span></div>
+<div class="stats">
+<div class="stat"><b id="wkPrev">0</b><span>Vorwoche</span></div>
+<div class="stat"><b id="wkStreak">0</b><span>Tage in Folge</span></div>
+<div class="stat"><b id="wkTotal">0</b><span>Insgesamt gesehen</span></div>
+</div>
+<p class="note">Jetzt vergleichen: Stand kopieren und in den Gruppenchat schicken. Danach startet ihr die neue Woche.</p>
+<textarea id="wkTxt" readonly aria-label="Wochenstand als Text"></textarea>
+<div class="btns"><button id="wkCopy">Stand kopieren</button><button class="primary big" id="wkNew">Neue Woche starten</button></div>
+</div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
 <div class="toast" id="toast" role="status"></div>
 <div class="bingo" id="bingo" role="status" aria-live="polite"></div>
 
 <script>
 (function(){
 var TASKS=[
-["Eine Person sammelt Pfand",1],["Jemand hört ohne Kopfhörer Musik oder schaut YouTube",1],["Ein Hund trägt Mantel oder Pullover",2],
-["Eine Person fährt Tandem oder Lastenrad",3],null,["Eine Taube sitzt auf einem Fahrrad oder Müllkübel",2],
+["Eine Person sammelt Pfand",1],["Jemand hört ohne Kopfhörer Musik",1],["Ein Hund trägt Kleidung",2],
+["Eine Person fährt Tandem oder Lastenrad",3],null,["Ein Vogel sitzt auf einem Fahrrad oder Müllkübel",1],
 ["Jemand trägt etwas Sperriges allein durch die Stadt",2],["Eine Person liest ein gedrucktes Buch im Stehen",3],["Zwei Menschen mit dem gleichen Outfit",3],
 ["Jemand isst Eis, obwohl es kalt ist",2],["Straßenmusik, egal welches Instrument",1],["Eine Person mit Regenschirm bei Sonne",2],
-["Jemand schläft auf einer Bank",2],["Eine Person lacht laut allein",2],["Ein Fahrrad mit ungewöhnlicher Ladung",2],
+["Jemand schläft auf einer Bank",2],["Eine Person lacht laut allein",2],null,
 ["Jemand trägt Hut und Krawatte",2],["Ein Tisch oder Sofa steht am Gehsteig zum Mitnehmen",3],["Jemand spielt Schach oder Karten draußen",3],
 null,["Ein Mensch tanzt mitten auf dem Gehsteig",3],["Eine Person trägt Sonnenbrille bei Regen",2],
 ["Eine Gruppe macht ein Selfie",1],null,["Jemand trägt zwei verschiedene Schuhe",3],
 ["Ein riesiger Hund mit winzigem Besitzer",3],["Eine Person mit Blumenstrauß",1],["Eine Person schiebt ein Fahrrad mit plattem Reifen",2],
 null,["Ein Regenbogen",1],["Jemand telefoniert mit Kopfhörern und gestikuliert wild",1],
-["Jemand verkauft oder liest eine Straßenzeitung",2],null,
+null,null,
 null,["Ein Mensch mit Schlafsack oder Decke auf einer Bank",2],
 ["Eine Person mit vollbepacktem Einkaufswagen",2],["Ein Hund wartet vor einem Geschäft",1],
 ["Jemand füllt eine Flasche an einem Trinkbrunnen",2],null,
 null,["Jemand wartet vor einem Geschäft, das noch geschlossen ist",1],
-null,["Jemand füttert Tauben, obwohl es verboten ist",2],["Eine Person fährt mit dem Rad ohne Licht in der Dämmerung",1],
+null,["Jemand füttert Vögel oder andere wilde Tiere",1],["Eine Person fährt mit dem Rad ohne Licht in der Dämmerung",1],
 ["Ein Auto mit Kennzeichen aus einem anderen Bundesland",1],["Jemand sitzt auf dem Boden und liest oder schreibt",2],["Eine Person macht Yoga oder Dehnübungen im Park",3],
 ["Jemand fährt einen Rollstuhl mit Musik oder Wimpel",3],["Ein Mensch jongliert oder macht Straßenzauber",3],
 ["Person mit einer kurzen karierten Hose",2],["Person mit Fahrradhelm ohne Fahrrad",2],["Tinder-Date",3],["Ratten",3],
 ["Menschen, die mit Katzen spazieren gehen",3],["Person mit Kleidung, die nicht wetteradäquat ist",1],["Person, die Zigarettenstummel sammelt und raucht",3],
 null,["Personen, die mehr als 3 Vogelfedern mitführen",3],["Personen, die ohne Auto übersiedeln",3],
 ["Person, die mit mehr als 5 Sackerln unterwegs ist",2],["Person, die komplett in einer Farbe gekleidet ist (außer Schwarz)",2],["Person, die uns in einer anderen Sprache anspricht",2],
-["Jemand trägt Pantoffeln oder Badeschlappen draußen",1],["Ein Fahrrad ist an einem Baum oder Schild festgesperrt",1],["Jemand fotografiert sein Essen",1]
+["Jemand trägt Pantoffeln oder Badeschlappen draußen",1],["Ein Fahrrad ist an einem Baum festgesperrt",1],["Jemand fotografiert sein Essen",1],["Zwei Personen auf einem E-Scooter",1]
 ];
 
 var SEASON=[
@@ -189,7 +211,96 @@ var me=null,sel=-1;
 var $=function(id){return document.getElementById(id)};
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var bTimer=null;
-function bingo(a,b){var e=$("bingo");e.innerHTML="<span>"+esc(a)+"</span><small>"+esc(b)+"</small>";e.classList.add("show");try{if(navigator.vibrate)navigator.vibrate(150)}catch(x){}clearTimeout(bTimer);bTimer=setTimeout(function(){e.classList.remove("show")},2000)}
+var FX={cv:null,ctx:null,w:0,h:0,parts:[],dinos:[],bolts:[],spirals:[],cats:[],ev:[],flash:0,last:0,on:false};
+var EMO='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+function fxReduced(){try{return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)}catch(e){return false}}
+function fxSize(){var d=Math.min(window.devicePixelRatio||1,2);FX.w=window.innerWidth;FX.h=window.innerHeight;FX.cv.width=Math.round(FX.w*d);FX.cv.height=Math.round(FX.h*d);FX.ctx.setTransform(d,0,0,d,0,0)}
+function burst(x,y){
+var hue=rnd(360),n=70+rnd(40);
+for(var i=0;i<n;i++){var a=Math.PI*2*i/n+Math.random()*.2,sp=2+Math.random()*5;
+FX.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dec:.008+Math.random()*.01,h:hue+rnd(40),sz:1.5+Math.random()*2})}
+if(FX.parts.length>1500)FX.parts.splice(0,FX.parts.length-1500)}
+function dino(){
+var left=Math.random()<.5,sz=44+rnd(34);
+FX.dinos.push({e:["🦖","🦕"][rnd(2)],sz:sz,x:left?-sz:FX.w+sz,y:FX.h*(.15+Math.random()*.6),vx:(left?1:-1)*(3+Math.random()*3),ph:Math.random()*6,amp:15+rnd(25),dir:left?1:-1,rot:(Math.random()-.5)*.4})}
+function bolt(){
+var x=FX.w*(.1+Math.random()*.8),y=0,pts=[[x,0]];
+while(y<FX.h*.7){y+=20+Math.random()*40;x+=(Math.random()-.5)*60;pts.push([x,y])}
+FX.bolts.push({pts:pts,life:1});FX.flash=.55;
+burst(pts[pts.length-1][0],pts[pts.length-1][1])}
+function drawHat(c,t,sz,col){
+c.save();c.translate(0,-sz*.32);c.rotate(-.22);
+if(t===0){
+c.fillStyle="hsl("+col+",85%,55%)";c.beginPath();c.moveTo(-sz*.2,0);c.lineTo(sz*.2,0);c.lineTo(0,-sz*.5);c.closePath();c.fill();
+c.strokeStyle="rgba(255,255,255,.85)";c.lineWidth=Math.max(2,sz*.04);c.beginPath();c.moveTo(-sz*.13,-sz*.17);c.lineTo(sz*.13,-sz*.17);c.moveTo(-sz*.07,-sz*.33);c.lineTo(sz*.07,-sz*.33);c.stroke();
+c.fillStyle="#FFD54A";c.beginPath();c.arc(0,-sz*.5,sz*.06,0,6.2832);c.fill()}
+else if(t===1){
+c.fillStyle="#222";c.fillRect(-sz*.17,-sz*.36,sz*.34,sz*.36);c.fillRect(-sz*.28,-sz*.03,sz*.56,sz*.06);
+c.fillStyle="hsl("+col+",85%,55%)";c.fillRect(-sz*.17,-sz*.1,sz*.34,sz*.06)}
+else{
+c.fillStyle="#FFC107";c.beginPath();c.moveTo(-sz*.2,0);c.lineTo(-sz*.2,-sz*.28);c.lineTo(-sz*.1,-sz*.14);c.lineTo(0,-sz*.32);c.lineTo(sz*.1,-sz*.14);c.lineTo(sz*.2,-sz*.28);c.lineTo(sz*.2,0);c.closePath();c.fill()}
+c.restore()}
+function cat(){
+var sz=46+rnd(26);
+FX.cats.push({e:["🐱","😺","😸"][rnd(3)],sz:sz,x:FX.w*(.12+Math.random()*.76),y:FX.h+sz,vx:(Math.random()-.5)*3,vy:-(14+Math.random()*5),rot:0,vr:(Math.random()-.5)*.06,hat:rnd(3),col:rnd(360)})}
+function fxReady(){
+if(fxReduced())return false;
+var cv=FX.cv||(FX.cv=$("fx"));if(!cv||!cv.getContext)return false;
+if(!FX.ctx){FX.ctx=cv.getContext("2d");if(!FX.ctx)return false}
+fxSize();return true}
+function fxKick(now){if(!FX.on){FX.on=true;FX.last=now;requestAnimationFrame(fxLoop)}}
+function fxSpiral(){
+if(!fxReady())return;
+var now=performance.now(),br=$("board").getBoundingClientRect();
+var cx=Math.min(Math.max(br.left+br.width/2,0),FX.w),cy=Math.min(Math.max(br.top+br.height/2,40),FX.h-40);
+FX.spirals.push({t0:now,dur:2600,p:0,cx:cx,cy:cy,R:Math.sqrt(FX.w*FX.w+FX.h*FX.h)*.55});
+fxKick(now)}
+function fxStart(level){
+if(!fxReady())return;
+var now=performance.now(),plan=[],i,rb=function(){burst(FX.w*(.15+Math.random()*.7),FX.h*(.12+Math.random()*.4))};
+if(level===1){for(i=0;i<5;i++)plan.push([i*320,rb]);for(i=0;i<5;i++)plan.push([i*260,cat])}
+else if(level===3){fxSpiral();[1900,2200,2500].forEach(function(t){plan.push([t,rb])})}
+else{
+for(i=0;i<13;i++)plan.push([i*300,rb]);
+for(i=0;i<7;i++)plan.push([200+i*450,dino]);
+[250,1150,2100].forEach(function(t){plan.push([t,bolt])})}
+plan.forEach(function(q){FX.ev.push({t:now+q[0],f:q[1]})});
+fxKick(now)}
+function fxLoop(now){
+var c=FX.ctx,dt=Math.min(3,(now-FX.last)/16.7),i;FX.last=now;
+c.clearRect(0,0,FX.w,FX.h);
+for(i=FX.ev.length-1;i>=0;i--){if(now>=FX.ev[i].t){var f=FX.ev[i].f;FX.ev.splice(i,1);f()}}
+for(i=FX.spirals.length-1;i>=0;i--){var sp=FX.spirals[i],p=(now-sp.t0)/sp.dur;
+if(p>=1){FX.spirals.splice(i,1);burst(sp.cx,sp.cy);continue}
+for(var st=1;st<=4;st++){var pp=sp.p+(p-sp.p)*st/4;
+for(var a=0;a<4;a++){var ang=pp*Math.PI*2*3.5+a*Math.PI/2,r=pp*sp.R;
+FX.parts.push({x:sp.cx+Math.cos(ang)*r,y:sp.cy+Math.sin(ang)*r,vx:0,vy:0,g:0,life:1,dec:.014,h:(pp*540+a*90)%360,sz:3.4})}}
+sp.p=p}
+if(FX.parts.length>2500)FX.parts.splice(0,FX.parts.length-2500);
+if(FX.flash>.01){c.fillStyle="rgba(255,244,170,"+FX.flash+")";c.fillRect(0,0,FX.w,FX.h);FX.flash*=Math.pow(.88,dt)}
+for(i=FX.bolts.length-1;i>=0;i--){var b=FX.bolts[i];b.life-=.05*dt;
+if(b.life<=0){FX.bolts.splice(i,1);continue}
+c.save();c.globalAlpha=Math.min(1,b.life*1.6);c.lineJoin="round";c.shadowColor="#FFB300";c.shadowBlur=26;
+c.beginPath();c.moveTo(b.pts[0][0],b.pts[0][1]);for(var k=1;k<b.pts.length;k++)c.lineTo(b.pts[k][0],b.pts[k][1]);
+c.strokeStyle="#FFB300";c.lineWidth=9;c.stroke();c.shadowBlur=0;c.strokeStyle="#FFFFFF";c.lineWidth=3;c.stroke();
+var tip=b.pts[b.pts.length-1];c.shadowBlur=0;c.font="56px "+EMO;c.textAlign="center";c.textBaseline="middle";c.fillText("⚡",tip[0],tip[1]);c.restore()}
+for(i=FX.parts.length-1;i>=0;i--){var q=FX.parts[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=(q.g===undefined?.06:q.g)*dt;q.vx*=.99;q.life-=q.dec*dt;
+if(q.life<=0){FX.parts.splice(i,1);continue}
+c.globalAlpha=q.life;c.fillStyle="hsl("+q.h+",100%,55%)";c.beginPath();c.arc(q.x,q.y,q.sz,0,6.2832);c.fill()}
+c.globalAlpha=1;
+for(i=FX.cats.length-1;i>=0;i--){var ct=FX.cats[i];ct.x+=ct.vx*dt;ct.y+=ct.vy*dt;ct.vy+=.28*dt;ct.rot+=ct.vr*dt;
+if(ct.vy>0&&ct.y>FX.h+ct.sz){FX.cats.splice(i,1);continue}
+c.save();c.translate(ct.x,ct.y);c.rotate(ct.rot);c.font=ct.sz+"px "+EMO;c.textAlign="center";c.textBaseline="middle";c.fillText(ct.e,0,0);drawHat(c,ct.hat,ct.sz,ct.col);c.restore()}
+for(i=FX.dinos.length-1;i>=0;i--){var d=FX.dinos[i];d.x+=d.vx*dt;
+if((d.dir>0&&d.x>FX.w+d.sz*2)||(d.dir<0&&d.x<-d.sz*2)){FX.dinos.splice(i,1);continue}
+c.save();c.translate(d.x,d.y+Math.sin(d.ph+d.x/60)*d.amp);if(d.dir<0)c.scale(-1,1);c.rotate(d.rot);
+c.font=d.sz+"px "+EMO;c.textAlign="center";c.textBaseline="middle";c.fillText(d.e,0,0);c.restore()}
+if(!FX.parts.length&&!FX.dinos.length&&!FX.cats.length&&!FX.bolts.length&&!FX.ev.length&&!FX.spirals.length&&FX.flash<=.01){FX.on=false;c.clearRect(0,0,FX.w,FX.h);return}
+requestAnimationFrame(fxLoop)}
+function bingo(a,b,lvl){var e=$("bingo");e.innerHTML="<span>"+esc(a)+"</span><small>"+esc(b)+"</small>";e.classList.add("show");
+try{if(navigator.vibrate)navigator.vibrate(lvl===2?[100,60,100,60,220]:lvl===3?[80,40,80,40,80]:150)}catch(x){}
+fxStart(lvl||1);
+clearTimeout(bTimer);bTimer=setTimeout(function(){e.classList.remove("show")},lvl===2?3600:lvl===3?3000:2000)}
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},2200)}
 function load(){try{var r=localStorage.getItem(KEY);return r?JSON.parse(r):null}catch(e){return null}}
 var warned=false;
@@ -216,23 +327,28 @@ var a=allKeys().filter(function(k){return on.indexOf(k)<0&&me.found.indexOf(k)<0
 if(!a.length)a=allKeys().filter(function(k){return on.indexOf(k)<0});
 return a.length?a[rnd(a.length)]:null}
 function nLines(){return LINES.filter(function(l){return l.every(function(i){return me.board[i].s})}).length}
-function boardPts(){var s=0;me.board.forEach(function(c){if(c.s)s+=c.p||0});s+=nLines()*2;if(me.board.every(function(c){return c.s}))s+=5;return s}
+var RING=[0,1,2,3,5,6,7,8];
+function ringDone(){return RING.every(function(i){return me.board[i]&&me.board[i].s})}
+function boardPts(){var s=0;me.board.forEach(function(c){if(c.s)s+=c.p||0});s+=nLines()*2;if(ringDone())s+=4;if(me.board.every(function(c){return c.s}))s+=5;return s}
 function total(){return me.banked+boardPts()}
 function dayKey(){return new Date().toDateString()}
 function refreshSkips(){var d=dayKey();if(me.skipDay!==d){me.skipDay=d;me.skips=MAXSKIP;return true}return false}
-function fresh(name){me={name:name,score:0,banked:0,found:[],skipDay:dayKey(),skips:MAXSKIP,recent:[],round:1,log:[],board:[],custom:{},days:{},counts:{},best:0};newBoard()}
+function fresh(name){me={name:name,weekAck:dstr(wedB(Date.now())),score:0,banked:0,found:[],skipDay:dayKey(),skips:MAXSKIP,recent:[],round:1,log:[],board:[],custom:{},days:{},counts:{},best:0};newBoard()}
 function streak(){var d=new Date(),n=0;if(!me.days[dstr(d)])d.setDate(d.getDate()-1);while(me.days[dstr(d)]){n++;d.setDate(d.getDate()-1)}return n}
 function dayStart(){var d=new Date();d.setHours(0,0,0,0);return d.getTime()}
-function weekStart(){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()}
+function wedB(now){var d=new Date(now);d.setHours(13,0,0,0);d.setDate(d.getDate()-((d.getDay()+4)%7));if(d.getTime()>now)d.setDate(d.getDate()-7);return d}
+function weekStart(){return wedB(Date.now()).getTime()}
 function sum(a,b){var s=0;me.log.forEach(function(e){if(e[0]>=a&&e[0]<b)s+=e[1]});return s}
 function stats(){
 var ws=weekStart(),d=new Date(ws);d.setDate(d.getDate()-7);
 return{day:sum(dayStart(),Infinity),week:sum(ws,Infinity),last:sum(d.getTime(),ws)}}
 function logDelta(d){if(!d)return;var now=Date.now(),cut=now-21*864e5;me.log=me.log.filter(function(e){return e[0]>=cut});me.log.push([now,d])}
 
+function heal(){var ch=false;me.board.forEach(function(c){if(!c.s&&!T(c.k)){var nk=swapKey();if(nk){c.k=nk;ch=true}}});return ch}
 function render(){
+if(heal())save();
 $("board").innerHTML=me.board.map(function(c,i){
-var t=c.s?{t:c.t,p:c.p}:T(c.k);if(!t)return"";
+var t=c.s?{t:c.t,p:c.p}:T(c.k);if(!t)t={t:"Neue Aufgabe folgt",p:1};
 return '<button class="cell'+(i===sel?' sel':'')+'" data-i="'+i+'" aria-pressed="'+(c.s?'true':'false')+'"><span>'+(c.s?'✓ ':'')+esc(t.t)+'</span><span class="pp">'+t.p+'</span></button>';
 }).join("");
 var c=me.board[sel],h="";
@@ -250,19 +366,19 @@ $("sStreak").textContent=sk;$("sBest").textContent=Math.max(me.best,sk);$("sTota
 keys.sort(function(a,b){return me.counts[b]-me.counts[a]||(a<b?-1:1)});
 $("top").innerHTML=keys.length?keys.slice(0,3).map(function(k){return '<li><span>'+esc(k)+'</span><strong>'+me.counts[k]+'×</strong></li>'}).join(""):'<li><span>Noch nichts gesehen.</span></li>';
 $("txt").value="Streetwork Bingo\nHeute: "+st.day+" Punkte\nDiese Woche: "+st.week+" Punkte\nLetzte Woche: "+st.last+" Punkte\nSerie: "+sk+(sk===1?" Tag":" Tage")+" in Folge";
-var mine=Object.keys(me.custom);
-$("mine").innerHTML=mine.map(function(k){return '<li><span>'+esc(me.custom[k].t)+' ('+me.custom[k].p+')</span><button data-del="'+esc(k)+'">Löschen</button></li>'}).join("");
 }
 
 function mark(i){
 var c=me.board[i],t=T(c.k);if(c.s||!t)return;
-var before=total(),lb=nLines();
+var before=total(),lb=nLines(),rb=ringDone();
 c.s=1;c.t=t.t;c.p=t.p;me.found.push(c.k);me.recent.unshift(t.t);me.recent=me.recent.slice(0,3);
-var after=total(),d=after-before,la=nLines();logDelta(d);
+var after=total(),d=after-before,la=nLines(),ra=ringDone();logDelta(d);
 me.days[dstr(new Date())]=1;me.counts[t.t]=(me.counts[t.t]||0)+1;
 var sk=streak();if(sk>me.best)me.best=sk;
-if(me.board.every(function(x){return x.s})){me.banked=after;newBoard();sel=-1;toast("Karte voll! +"+d+" Punkte, neue Karte");bingo("Karte voll!","+"+d+" Punkte, neue Karte")}
-else{toast("+"+d+(d>t.p?" Punkte (Bonus!)":" Punkte"));if(la>lb)bingo("Bingo!","Reihe voll: +"+(la-lb)*2+" Bonus")}
+if(me.board.every(function(x){return x.s})){me.banked=after;newBoard();sel=-1;bingo("Karte voll!","+"+d+" Punkte, neue Karte",2);if(ra&&!rb)fxSpiral()}
+else if(ra&&!rb)bingo("Kreis!","Alle Randfelder: +4 Bonus",3)
+else if(la>lb)bingo("Bingo!","Reihe voll: +"+(la-lb)*2+" Bonus",1);
+else toast("+"+d+" Punkte");
 me.score=total();render();save()}
 function unmark(i){
 var c=me.board[i];if(!c.s)return;
@@ -286,15 +402,6 @@ if(a==="seen")mark(sel);else if(a==="undo")unmark(sel);else if(a==="swap")swap(s
 $("again").onclick=function(){
 if(!confirm("Neue Runde starten? Runden-Punkte werden zurückgesetzt, die heutigen Tausche bleiben."))return;
 me.round++;me.score=0;me.banked=0;me.found=[];me.recent=[];sel=-1;newBoard();render();save();toast("Runde "+me.round+" läuft")};
-$("addT").onclick=function(){
-var t=$("newT").value.trim();if(t.length<5){toast("Bitte kurz beschreiben, was man sieht");return}
-me.custom["c_"+Date.now().toString(36)+rnd(999)]={t:t,p:1};
-$("newT").value="";render();save();toast("Aufgabe hinzugefügt")};
-$("mine").addEventListener("click",function(e){
-var k=e.target.getAttribute("data-del");if(!k)return;
-delete me.custom[k];
-me.board.forEach(function(c){if(!c.s&&c.k===k){var nk=swapKey();if(nk)c.k=nk}});
-render();save()});
 $("toggleTxt").onclick=function(){var t=$("txt");t.hidden=!t.hidden;this.textContent=t.hidden?"Text anzeigen":"Text verbergen"};
 $("share").onclick=function(){
 var t=$("txt"),text=t.value;
@@ -304,14 +411,38 @@ $("go").onclick=function(){
 var n=$("nick").value.trim();if(!n){toast("Bitte einen Spitznamen eingeben");return}
 fresh(n);start();save()};
 $("nick").addEventListener("keydown",function(e){if(e.key==="Enter")$("go").click()});
-function start(){$("join").hidden=true;$("game").hidden=false;render()}
+var wkOpen=false;
+function f2(d){return(d.getDate()<10?"0":"")+d.getDate()+"."+(d.getMonth()+1<10?"0":"")+(d.getMonth()+1)+"."}
+function pendingWeek(){var B=wedB(Date.now());return me.weekAck!==dstr(B)?B:null}
+function showWeek(B){
+var a=new Date(B.getTime());a.setDate(a.getDate()-7);var p=new Date(B.getTime());p.setDate(p.getDate()-14);
+var pts=sum(a.getTime(),B.getTime()),prev=sum(p.getTime(),a.getTime()),sk=streak(),keys=Object.keys(me.counts),tot=0;
+keys.forEach(function(k){tot+=me.counts[k]});
+$("wkSub").textContent="Woche von Mi "+f2(a)+" bis Mi "+f2(B)+", 13:00";
+$("wkPts").textContent=pts;$("wkPrev").textContent=prev;$("wkStreak").textContent=sk;$("wkTotal").textContent=tot;
+$("wkTxt").value="Streetwork Bingo, Wochenstand (bis Mi "+f2(B)+", 13:00)\nPunkte: "+pts+"\nVorwoche: "+prev+"\nSerie: "+sk+(sk===1?" Tag":" Tage")+" in Folge";
+sel=-1;$("wk").hidden=false;var m=document.querySelector("main");m.inert=true;m.setAttribute("aria-hidden","true");wkOpen=true;
+try{$("wkNew").focus()}catch(e){}}
+function checkWeek(){if(!me||wkOpen||$("game").hidden)return;var B=pendingWeek();if(B)showWeek(B)}
+$("wkCopy").onclick=function(){
+var t=$("wkTxt"),text=t.value;
+function fb(){t.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}toast(ok?"Stand kopiert":"Text markiert, bitte manuell kopieren")}
+if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast("Stand kopiert")},fb)}else fb()};
+$("wkNew").onclick=function(){
+var B=pendingWeek()||wedB(Date.now());me.weekAck=dstr(B);
+me.round++;me.score=0;me.banked=0;me.found=[];me.recent=[];sel=-1;newBoard();
+$("wk").hidden=true;var m=document.querySelector("main");m.inert=false;m.removeAttribute("aria-hidden");wkOpen=false;
+render();save();toast("Neue Woche gestartet")};
+function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek()}
 
 me=load();
 if(me&&Array.isArray(me.board)&&me.board.length===9){
-me.custom=me.custom||{};me.days=me.days||{};me.counts=me.counts||{};me.best=me.best||0;me.log=me.log||[];me.found=me.found||[];me.recent=me.recent||[];
+if(!me.weekAck)me.weekAck=dstr(wedB(Date.now()));me.custom={};me.days=me.days||{};me.counts=me.counts||{};me.best=me.best||0;me.log=me.log||[];me.found=me.found||[];me.recent=me.recent||[];
 refreshSkips();me.board.forEach(function(c){if(!c.s&&!T(c.k)){var nk=swapKey();if(nk)c.k=nk}});
 me.score=total();start();save()}
 else{fresh("");start();save()}
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&me){if(refreshSkips())save();render();checkWeek()}});
+setInterval(checkWeek,5000);
 try{if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}
 })();
 </script>

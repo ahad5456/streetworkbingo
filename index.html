@@ -53,6 +53,14 @@ input{width:100%;min-height:46px;padding:8px 12px;border:1px solid var(--line);b
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
 .toast.show{opacity:1}
 canvas#fx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4}
+#splash{position:fixed;left:0;top:0;right:0;bottom:0;z-index:50;background:#0E0B1A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity .45s;animation:splashOut .45s ease 2.8s forwards}
+#splash.out{opacity:0;pointer-events:none}
+#splash svg{width:132px;height:132px}
+#splash .sc{opacity:0;transform:scale(.6);transform-box:fill-box;transform-origin:center;animation:splashIn .35s ease-out forwards}
+#splash p{margin:0;color:#fff;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:1.6rem}
+@keyframes splashIn{to{opacity:1;transform:none}}
+@keyframes splashOut{to{opacity:0;visibility:hidden}}
+@media (prefers-reduced-motion:reduce){#splash .sc{animation:none;opacity:1;transform:none}#splash{transition:none}}
 .wk{position:fixed;left:0;top:0;right:0;bottom:0;z-index:20;background:var(--bg);overflow:auto;padding:max(16px,env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
 .wkIn{max-width:640px;margin:0 auto}
 .wkBig{background:var(--pri);color:var(--pri-ink);border-radius:18px;padding:18px;text-align:center;margin:10px 0 12px}
@@ -110,6 +118,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><svg viewBox="-4 -4 120 120" role="presentation"><rect class="sc" style="animation-delay:0ms" x="0" y="0" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:70ms" x="40" y="0" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:140ms" x="80" y="0" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:210ms" x="0" y="40" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:280ms" x="40" y="40" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:350ms" x="80" y="40" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:420ms" x="0" y="80" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:490ms" x="40" y="80" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:560ms" x="80" y="80" width="32" height="32" rx="8" fill="#FFC93C"/></svg><p>Streetwork Bingo</p></div>
 <main>
 <h1>Streetwork Bingo</h1>
 <p class="sub">Neun Dinge in der Stadt. Hake sie ab, sammle Reihen. Pro Tag darfst du dreimal Felder tauschen.</p>
@@ -459,6 +468,8 @@ me.score=total();start();save()}
 else{fresh("");start();save()}
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&me){if(refreshSkips())save();render();checkWeek()}});
 setInterval(checkWeek,5000);
+(function(){var sp=$("splash");function hide(){sp.className="out";setTimeout(function(){sp.hidden=true},600)}
+sp.onclick=hide;setTimeout(hide,Math.max(0,1300-(window.performance&&performance.now?performance.now():0)))})();
 try{if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}
 })();
 </script>

@@ -125,13 +125,10 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <div class="stat"><b id="sWeek">0</b><span>Diese Woche</span></div>
 <div class="stat"><b id="sLast">0</b><span>Letzte Woche</span></div>
 </div>
-<div class="stats" style="margin-top:8px">
+<div class="stats" style="margin-top:8px;grid-template-columns:repeat(2,1fr)">
 <div class="stat"><b id="sStreak">0</b><span>Tage in Folge</span></div>
-<div class="stat"><b id="sBest">0</b><span>Beste Serie</span></div>
 <div class="stat"><b id="sTotal">0</b><span>Insgesamt gesehen</span></div>
 </div>
-<p class="note" style="margin-bottom:0"><strong>Am häufigsten gesehen</strong></p>
-<ul class="top" id="top"></ul>
 <p class="note">Zum Vergleichen im Team: Stand als Text kopieren und in euren Gruppenchat schicken. Deinen Namen schreibst du im Chat selbst dazu. Eine Woche läuft von Mittwoch 13:00 bis Mittwoch 13:00, dann erscheint der Wochenabschluss.</p>
 <div class="btns" style="grid-template-columns:1fr 1fr"><button class="primary" id="share">Stand kopieren</button><button id="toggleTxt">Text anzeigen</button></div>
 <textarea id="txt" readonly hidden aria-label="Stand als Text"></textarea>
@@ -139,7 +136,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 
 
 <p class="note">Es geht nur ums Sehen. Bitte nichts fotografieren und niemanden ansprechen oder bloßstellen. Alle Aufgaben zählen auf Ehrenwort.</p>
-<p class="note"><button id="again">Neue Runde starten</button> Setzt die Runden-Punkte zurück, Tages- und Wochenstand und die heutigen Tausche bleiben.</p>
+<p class="note">Eine neue Runde mit neuer Karte startet immer am Mittwoch um 13:00 mit dem Wochenabschluss.</p>
 <p class="note">Dein Spielstand liegt nur in diesem Browser auf diesem Gerät. Wenn du den Browserverlauf löschst, ist er weg.</p>
 </section>
 </main>
@@ -362,9 +359,7 @@ $("meScore").textContent=me.score;
 $("meInfo").textContent=me.board.filter(function(x){return x.s}).length+"/9 auf der Karte · "+nLines()+" Reihen · "+me.skips+" Tausche heute übrig";
 var st=stats();$("sDay").textContent=st.day;$("sWeek").textContent=st.week;$("sLast").textContent=st.last;
 var sk=streak(),keys=Object.keys(me.counts),tot=0;keys.forEach(function(k){tot+=me.counts[k]});
-$("sStreak").textContent=sk;$("sBest").textContent=Math.max(me.best,sk);$("sTotal").textContent=tot;
-keys.sort(function(a,b){return me.counts[b]-me.counts[a]||(a<b?-1:1)});
-$("top").innerHTML=keys.length?keys.slice(0,3).map(function(k){return '<li><span>'+esc(k)+'</span><strong>'+me.counts[k]+'×</strong></li>'}).join(""):'<li><span>Noch nichts gesehen.</span></li>';
+$("sStreak").textContent=sk;$("sTotal").textContent=tot;
 $("txt").value="Streetwork Bingo\nHeute: "+st.day+" Punkte\nDiese Woche: "+st.week+" Punkte\nLetzte Woche: "+st.last+" Punkte\nSerie: "+sk+(sk===1?" Tag":" Tage")+" in Folge";
 }
 
@@ -374,7 +369,6 @@ var before=total(),lb=nLines(),rb=ringDone();
 c.s=1;c.t=t.t;c.p=t.p;me.found.push(c.k);me.recent.unshift(t.t);me.recent=me.recent.slice(0,3);
 var after=total(),d=after-before,la=nLines(),ra=ringDone();logDelta(d);
 me.days[dstr(new Date())]=1;me.counts[t.t]=(me.counts[t.t]||0)+1;
-var sk=streak();if(sk>me.best)me.best=sk;
 if(me.board.every(function(x){return x.s})){me.banked=after;newBoard();sel=-1;bingo("Karte voll!","+"+d+" Punkte, neue Karte",2);if(ra&&!rb)fxSpiral()}
 else if(ra&&!rb)bingo("Kreis!","Alle Randfelder: +4 Bonus",3)
 else if(la>lb)bingo("Bingo!","Reihe voll: +"+(la-lb)*2+" Bonus",1);
@@ -399,9 +393,6 @@ var i=+b.getAttribute("data-i");sel=(sel===i)?-1:i;render()});
 $("act").addEventListener("click",function(e){
 var a=e.target.getAttribute("data-a");if(!a||sel<0)return;
 if(a==="seen")mark(sel);else if(a==="undo")unmark(sel);else if(a==="swap")swap(sel);else{sel=-1;render()}});
-$("again").onclick=function(){
-if(!confirm("Neue Runde starten? Runden-Punkte werden zurückgesetzt, die heutigen Tausche bleiben."))return;
-me.round++;me.score=0;me.banked=0;me.found=[];me.recent=[];sel=-1;newBoard();render();save();toast("Runde "+me.round+" läuft")};
 $("toggleTxt").onclick=function(){var t=$("txt");t.hidden=!t.hidden;this.textContent=t.hidden?"Text anzeigen":"Text verbergen"};
 $("share").onclick=function(){
 var t=$("txt"),text=t.value;

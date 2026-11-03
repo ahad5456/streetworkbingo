@@ -95,6 +95,16 @@ select{width:100%;min-height:46px;padding:8px;border:1px solid var(--line);borde
 .stat b{display:block;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.6rem;line-height:1.1}
 .top{list-style:none;margin:0;padding:0}
 .top li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+button.stat{font:inherit;color:var(--pri);border:2px solid var(--pri);cursor:pointer;min-height:0}
+button.stat b{font-size:1.25rem}
+button.stat span{color:var(--pri)}
+.histp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:8px}
+.hist{list-style:none;margin:0;padding:0}
+.hist li{display:grid;grid-template-columns:118px 1fr 44px;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:.92rem}
+.hist li.now{font-weight:700}
+.hist b{text-align:right}
+.vb{display:block;background:var(--bg);border:1px solid var(--line);border-radius:6px;height:14px;overflow:hidden}
+.vb i{display:block;height:100%;background:var(--pri)}
 .stat span{color:var(--muted);font-size:.85rem}
 textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit}
 </style>
@@ -123,12 +133,13 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <div class="stats">
 <div class="stat"><b id="sDay">0</b><span>Heute</span></div>
 <div class="stat"><b id="sWeek">0</b><span>Diese Woche</span></div>
-<div class="stat"><b id="sLast">0</b><span>Letzte Woche</span></div>
+<button class="stat" id="histBtn" aria-expanded="false" aria-controls="hist"><b>Verlauf</b><span>Wochen, Monate, Jahre</span></button>
 </div>
-<div class="stats" style="margin-top:8px;grid-template-columns:repeat(2,1fr)">
-<div class="stat"><b id="sStreak">0</b><span>Tage in Folge</span></div>
-<div class="stat"><b id="sTotal">0</b><span>Insgesamt gesehen</span></div>
-</div>
+<section id="hist" class="histp" hidden>
+<div class="tabs" role="group" aria-label="Zeitraum" id="histTabs"><button data-h="w" aria-pressed="true">Wochen</button><button data-h="m" aria-pressed="false">Monate</button><button data-h="y" aria-pressed="false">Jahre</button></div>
+<ul class="hist" id="histList"></ul>
+<p class="note" id="histNote" style="margin-bottom:0">Der Verlauf wächst ab diesem Update mit. Frühere Zeiträume sind nicht gespeichert.</p>
+</section>
 <p class="note">Zum Vergleichen im Team: Stand als Text kopieren und in euren Gruppenchat schicken. Deinen Namen schreibst du im Chat selbst dazu. Eine Woche läuft von Mittwoch 13:00 bis Mittwoch 13:00, dann erscheint der Wochenabschluss.</p>
 <div class="btns" style="grid-template-columns:1fr 1fr"><button class="primary" id="share">Stand kopieren</button><button id="toggleTxt">Text anzeigen</button></div>
 <textarea id="txt" readonly hidden aria-label="Stand als Text"></textarea>
@@ -145,10 +156,8 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <p class="note" id="wkSub" style="margin:0"></p>
 <h2 id="wkT">Wochenabschluss</h2>
 <div class="wkBig"><b id="wkPts">0</b><span>Punkte in dieser Woche</span></div>
-<div class="stats">
+<div class="stats" style="grid-template-columns:1fr">
 <div class="stat"><b id="wkPrev">0</b><span>Vorwoche</span></div>
-<div class="stat"><b id="wkStreak">0</b><span>Tage in Folge</span></div>
-<div class="stat"><b id="wkTotal">0</b><span>Insgesamt gesehen</span></div>
 </div>
 <p class="note">Jetzt vergleichen: Stand kopieren und in den Gruppenchat schicken. Danach startet ihr die neue Woche.</p>
 <textarea id="wkTxt" readonly aria-label="Wochenstand als Text"></textarea>
@@ -330,7 +339,7 @@ function boardPts(){var s=0;me.board.forEach(function(c){if(c.s)s+=c.p||0});s+=n
 function total(){return me.banked+boardPts()}
 function dayKey(){return new Date().toDateString()}
 function refreshSkips(){var d=dayKey();if(me.skipDay!==d){me.skipDay=d;me.skips=MAXSKIP;return true}return false}
-function fresh(name){me={name:name,weekAck:dstr(wedB(Date.now())),score:0,banked:0,found:[],skipDay:dayKey(),skips:MAXSKIP,recent:[],round:1,log:[],board:[],custom:{},days:{},counts:{},best:0};newBoard()}
+function fresh(name){me={name:name,weekAck:dstr(wedB(Date.now())),score:0,banked:0,found:[],skipDay:dayKey(),skips:MAXSKIP,recent:[],round:1,log:[],board:[],custom:{},days:{},counts:{},best:0,weeks:{},months:{},hist:1};newBoard()}
 function streak(){var d=new Date(),n=0;if(!me.days[dstr(d)])d.setDate(d.getDate()-1);while(me.days[dstr(d)]){n++;d.setDate(d.getDate()-1)}return n}
 function dayStart(){var d=new Date();d.setHours(0,0,0,0);return d.getTime()}
 function wedB(now){var d=new Date(now);d.setHours(13,0,0,0);d.setDate(d.getDate()-((d.getDay()+4)%7));if(d.getTime()>now)d.setDate(d.getDate()-7);return d}
@@ -339,7 +348,22 @@ function sum(a,b){var s=0;me.log.forEach(function(e){if(e[0]>=a&&e[0]<b)s+=e[1]}
 function stats(){
 var ws=weekStart(),d=new Date(ws);d.setDate(d.getDate()-7);
 return{day:sum(dayStart(),Infinity),week:sum(ws,Infinity),last:sum(d.getTime(),ws)}}
-function logDelta(d){if(!d)return;var now=Date.now(),cut=now-21*864e5;me.log=me.log.filter(function(e){return e[0]>=cut});me.log.push([now,d])}
+var MON=["Jänner","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"],histMode="w";
+function mkey(d){return d.getFullYear()+"-"+(d.getMonth()+1<10?"0":"")+(d.getMonth()+1)}
+function addHist(ts,d){var wk=dstr(wedB(ts)),mo=mkey(new Date(ts));me.weeks[wk]=(me.weeks[wk]||0)+d;me.months[mo]=(me.months[mo]||0)+d}
+function hRows(m){
+var rows=[],i,now=new Date();
+if(m==="w"){var B=wedB(Date.now());for(i=0;i<12;i++){var a=new Date(B.getTime());a.setDate(a.getDate()-7*i);var e=new Date(a.getTime());e.setDate(e.getDate()+7);rows.push({l:f2(a)+" – "+f2(e),v:me.weeks[dstr(a)]||0,now:i===0})}}
+else if(m==="m"){for(i=0;i<12;i++){var d=new Date(now.getFullYear(),now.getMonth()-i,1);rows.push({l:MON[d.getMonth()]+" "+d.getFullYear(),v:me.months[mkey(d)]||0,now:i===0})}}
+else{var y0=now.getFullYear();Object.keys(me.months).forEach(function(k){if(+k.slice(0,4)<y0)y0=+k.slice(0,4)});
+for(var y=now.getFullYear();y>=y0;y--){var t=0;Object.keys(me.months).forEach(function(k){if(+k.slice(0,4)===y)t+=me.months[k]});rows.push({l:String(y),v:t,now:y===now.getFullYear()})}}
+return rows}
+function renderHist(){
+var rows=hRows(histMode),max=1;
+rows.forEach(function(r){r.v=Math.max(0,r.v);if(r.v>max)max=r.v});
+$("histList").innerHTML=rows.map(function(r){return '<li'+(r.now?' class="now"':'')+'><span>'+esc(r.l)+(r.now?' (läuft)':'')+'</span><span class="vb"><i style="width:'+Math.round(r.v/max*100)+'%"></i></span><b>'+r.v+'</b></li>'}).join("");
+Array.prototype.forEach.call(document.querySelectorAll("#histTabs button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-h")===histMode?"true":"false")})}
+function logDelta(d){if(!d)return;var now=Date.now(),cut=now-21*864e5;me.log=me.log.filter(function(e){return e[0]>=cut});me.log.push([now,d]);addHist(now,d)}
 
 function heal(){var ch=false;me.board.forEach(function(c){if(!c.s&&!T(c.k)){var nk=swapKey();if(nk){c.k=nk;ch=true}}});return ch}
 function render(){
@@ -357,10 +381,9 @@ $("act").innerHTML=h;
 $("meName").textContent="Runde "+me.round;
 $("meScore").textContent=me.score;
 $("meInfo").textContent=me.board.filter(function(x){return x.s}).length+"/9 auf der Karte · "+nLines()+" Reihen · "+me.skips+" Tausche heute übrig";
-var st=stats();$("sDay").textContent=st.day;$("sWeek").textContent=st.week;$("sLast").textContent=st.last;
-var sk=streak(),keys=Object.keys(me.counts),tot=0;keys.forEach(function(k){tot+=me.counts[k]});
-$("sStreak").textContent=sk;$("sTotal").textContent=tot;
-$("txt").value="Streetwork Bingo\nHeute: "+st.day+" Punkte\nDiese Woche: "+st.week+" Punkte\nLetzte Woche: "+st.last+" Punkte\nSerie: "+sk+(sk===1?" Tag":" Tage")+" in Folge";
+var st=stats();$("sDay").textContent=st.day;$("sWeek").textContent=st.week;
+if(!$("hist").hidden)renderHist();
+$("txt").value="Streetwork Bingo\nHeute: "+st.day+" Punkte\nDiese Woche: "+st.week+" Punkte\nLetzte Woche: "+st.last+" Punkte";
 }
 
 function mark(i){
@@ -393,6 +416,8 @@ var i=+b.getAttribute("data-i");sel=(sel===i)?-1:i;render()});
 $("act").addEventListener("click",function(e){
 var a=e.target.getAttribute("data-a");if(!a||sel<0)return;
 if(a==="seen")mark(sel);else if(a==="undo")unmark(sel);else if(a==="swap")swap(sel);else{sel=-1;render()}});
+$("histBtn").onclick=function(){var p=$("hist");p.hidden=!p.hidden;this.setAttribute("aria-expanded",p.hidden?"false":"true");if(!p.hidden)renderHist()};
+$("histTabs").addEventListener("click",function(e){var m=e.target.getAttribute("data-h");if(!m)return;histMode=m;renderHist()});
 $("toggleTxt").onclick=function(){var t=$("txt");t.hidden=!t.hidden;this.textContent=t.hidden?"Text anzeigen":"Text verbergen"};
 $("share").onclick=function(){
 var t=$("txt"),text=t.value;
@@ -407,11 +432,10 @@ function f2(d){return(d.getDate()<10?"0":"")+d.getDate()+"."+(d.getMonth()+1<10?
 function pendingWeek(){var B=wedB(Date.now());return me.weekAck!==dstr(B)?B:null}
 function showWeek(B){
 var a=new Date(B.getTime());a.setDate(a.getDate()-7);var p=new Date(B.getTime());p.setDate(p.getDate()-14);
-var pts=sum(a.getTime(),B.getTime()),prev=sum(p.getTime(),a.getTime()),sk=streak(),keys=Object.keys(me.counts),tot=0;
-keys.forEach(function(k){tot+=me.counts[k]});
+var pts=sum(a.getTime(),B.getTime()),prev=sum(p.getTime(),a.getTime());
 $("wkSub").textContent="Woche von Mi "+f2(a)+" bis Mi "+f2(B)+", 13:00";
-$("wkPts").textContent=pts;$("wkPrev").textContent=prev;$("wkStreak").textContent=sk;$("wkTotal").textContent=tot;
-$("wkTxt").value="Streetwork Bingo, Wochenstand (bis Mi "+f2(B)+", 13:00)\nPunkte: "+pts+"\nVorwoche: "+prev+"\nSerie: "+sk+(sk===1?" Tag":" Tage")+" in Folge";
+$("wkPts").textContent=pts;$("wkPrev").textContent=prev;
+$("wkTxt").value="Streetwork Bingo, Wochenstand (bis Mi "+f2(B)+", 13:00)\nPunkte: "+pts+"\nVorwoche: "+prev;
 sel=-1;$("wk").hidden=false;var m=document.querySelector("main");m.inert=true;m.setAttribute("aria-hidden","true");wkOpen=true;
 try{$("wkNew").focus()}catch(e){}}
 function checkWeek(){if(!me||wkOpen||$("game").hidden)return;var B=pendingWeek();if(B)showWeek(B)}
@@ -429,6 +453,7 @@ function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek
 me=load();
 if(me&&Array.isArray(me.board)&&me.board.length===9){
 if(!me.weekAck)me.weekAck=dstr(wedB(Date.now()));me.custom={};me.days=me.days||{};me.counts=me.counts||{};me.best=me.best||0;me.log=me.log||[];me.found=me.found||[];me.recent=me.recent||[];
+if(!me.hist){me.weeks={};me.months={};me.log.forEach(function(e){addHist(e[0],e[1])});me.hist=1}
 refreshSkips();me.board.forEach(function(c){if(!c.s&&!T(c.k)){var nk=swapKey();if(nk)c.k=nk}});
 me.score=total();start();save()}
 else{fresh("");start();save()}

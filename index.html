@@ -170,7 +170,8 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 </div>
 <p class="note">Jetzt vergleichen: Stand kopieren und in den Gruppenchat schicken. Danach startet ihr die neue Woche.</p>
 <textarea id="wkTxt" readonly aria-label="Wochenstand als Text"></textarea>
-<div class="btns"><button id="wkCopy">Stand kopieren</button><button class="primary big" id="wkNew">Neue Woche starten</button></div>
+<p class="note" id="wkCatch" hidden>Dieser Wochenabschluss kommt nachträglich, weil er am Mittwoch um 13:00 auf diesem Handy nicht erschienen ist. Wenn du die neue Woche hier schon gestartet hast, tippe auf „Schon gestartet“.</p>
+<div class="btns"><button id="wkCopy">Stand kopieren</button><button class="primary big" id="wkNew">Neue Woche starten</button><button id="wkSkip" hidden>Schon gestartet, weiter</button></div>
 </div>
 </div>
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -196,13 +197,13 @@ null,["Ein Mensch mit Schlafsack oder Decke auf einer Bank",2],
 ["Jemand füllt eine Flasche an einem Trinkbrunnen",2],null,
 null,["Jemand wartet vor einem Geschäft, das noch geschlossen ist",1],
 null,["Jemand füttert Vögel oder andere wilde Tiere",1],["Eine Person fährt mit dem Rad ohne Licht in der Dämmerung",1],
-["Ein Auto mit Kennzeichen aus einem anderen Bundesland",1],["Jemand sitzt auf dem Boden und liest oder schreibt",2],["Eine Person macht Yoga oder Dehnübungen im Park",3],
+["Ein Auto mit Kennzeichen aus einem anderen Land",1],["Jemand sitzt auf dem Boden und liest oder schreibt",2],["Eine Person macht Yoga oder Dehnübungen im Park",3],
 ["Jemand fährt einen Rollstuhl mit Musik oder Wimpel",3],["Ein Mensch jongliert oder macht Straßenzauber",3],
 ["Person mit einer kurzen karierten Hose",2],["Person mit Fahrradhelm ohne Fahrrad",2],["Tinder-Date",3],["Ratten",3],
 ["Menschen, die mit Katzen spazieren gehen",3],["Person mit Kleidung, die nicht wetteradäquat ist",1],["Person, die Zigarettenstummel sammelt und raucht",3],
 null,["Personen, die mehr als 3 Vogelfedern mitführen",3],["Personen, die ohne Auto übersiedeln",3],
 ["Person, die mit mehr als 5 Sackerln unterwegs ist",2],["Person, die komplett in einer Farbe gekleidet ist (außer Schwarz)",2],["Person, die uns in einer anderen Sprache anspricht",2],
-["Jemand trägt Pantoffeln oder Badeschlappen draußen",1],["Ein Fahrrad ist an einem Baum festgesperrt",1],["Jemand fotografiert sein Essen",1],["Zwei Personen auf einem E-Scooter",1]
+["Jemand trägt Pantoffeln oder Badeschlappen draußen",1],["Ein Fahrrad ist an einem Baum festgesperrt",1],["Jemand fotografiert sein Essen",1],["Zwei Personen auf einem E-Scooter",1],["Person mit Rucksack auf dem Bauch",1]
 ];
 
 var SEASON=[
@@ -348,7 +349,7 @@ function boardPts(){var s=0;me.board.forEach(function(c){if(c.s)s+=c.p||0});s+=n
 function total(){return me.banked+boardPts()}
 function dayKey(){return new Date().toDateString()}
 function refreshSkips(){var d=dayKey();if(me.skipDay!==d){me.skipDay=d;me.skips=MAXSKIP;return true}return false}
-function fresh(name){me={name:name,weekAck:dstr(wedB(Date.now())),score:0,banked:0,found:[],skipDay:dayKey(),skips:MAXSKIP,recent:[],round:1,log:[],board:[],custom:{},days:{},counts:{},best:0,weeks:{},months:{},hist:1};newBoard()}
+function fresh(name){me={name:name,wkv:2,weekAck:dstr(wedB(Date.now())),score:0,banked:0,found:[],skipDay:dayKey(),skips:MAXSKIP,recent:[],round:1,log:[],board:[],custom:{},days:{},counts:{},best:0,weeks:{},months:{},hist:1};newBoard()}
 function streak(){var d=new Date(),n=0;if(!me.days[dstr(d)])d.setDate(d.getDate()-1);while(me.days[dstr(d)]){n++;d.setDate(d.getDate()-1)}return n}
 function dayStart(){var d=new Date();d.setHours(0,0,0,0);return d.getTime()}
 function wedB(now){var d=new Date(now);d.setHours(13,0,0,0);d.setDate(d.getDate()-((d.getDay()+4)%7));if(d.getTime()>now)d.setDate(d.getDate()-7);return d}
@@ -438,13 +439,14 @@ fresh(n);start();save()};
 $("nick").addEventListener("keydown",function(e){if(e.key==="Enter")$("go").click()});
 var wkOpen=false;
 function f2(d){return(d.getDate()<10?"0":"")+d.getDate()+"."+(d.getMonth()+1<10?"0":"")+(d.getMonth()+1)+"."}
-function pendingWeek(){var B=wedB(Date.now());return me.weekAck!==dstr(B)?B:null}
+function pendingWeek(){var B=wedB(Date.now());return me.weekAck<dstr(B)?B:null}
 function showWeek(B){
 var a=new Date(B.getTime());a.setDate(a.getDate()-7);var p=new Date(B.getTime());p.setDate(p.getDate()-14);
 var pts=sum(a.getTime(),B.getTime()),prev=sum(p.getTime(),a.getTime());
 $("wkSub").textContent="Woche von Mi "+f2(a)+" bis Mi "+f2(B)+", 13:00";
 $("wkPts").textContent=pts;$("wkPrev").textContent=prev;
 $("wkTxt").value="Streetwork Bingo, Wochenstand (bis Mi "+f2(B)+", 13:00)\nPunkte: "+pts+"\nVorwoche: "+prev;
+$("wkCatch").hidden=!me.catchUp;$("wkSkip").hidden=!me.catchUp;
 sel=-1;$("wk").hidden=false;var m=document.querySelector("main");m.inert=true;m.setAttribute("aria-hidden","true");wkOpen=true;
 try{$("wkNew").focus()}catch(e){}}
 function checkWeek(){if(!me||wkOpen||$("game").hidden)return;var B=pendingWeek();if(B)showWeek(B)}
@@ -452,8 +454,12 @@ $("wkCopy").onclick=function(){
 var t=$("wkTxt"),text=t.value;
 function fb(){t.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}toast(ok?"Stand kopiert":"Text markiert, bitte manuell kopieren")}
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast("Stand kopiert")},fb)}else fb()};
+$("wkSkip").onclick=function(){
+var B=pendingWeek()||wedB(Date.now());me.weekAck=dstr(B);me.catchUp=false;
+$("wk").hidden=true;var m=document.querySelector("main");m.inert=false;m.removeAttribute("aria-hidden");wkOpen=false;
+render();save()};
 $("wkNew").onclick=function(){
-var B=pendingWeek()||wedB(Date.now());me.weekAck=dstr(B);
+var B=pendingWeek()||wedB(Date.now());me.weekAck=dstr(B);me.catchUp=false;
 me.round++;me.score=0;me.banked=0;me.found=[];me.recent=[];sel=-1;newBoard();
 $("wk").hidden=true;var m=document.querySelector("main");m.inert=false;m.removeAttribute("aria-hidden");wkOpen=false;
 render();save();toast("Neue Woche gestartet")};
@@ -461,7 +467,8 @@ function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek
 
 me=load();
 if(me&&Array.isArray(me.board)&&me.board.length===9){
-if(!me.weekAck)me.weekAck=dstr(wedB(Date.now()));me.custom={};me.days=me.days||{};me.counts=me.counts||{};me.best=me.best||0;me.log=me.log||[];me.found=me.found||[];me.recent=me.recent||[];
+if(me.wkv!==2){me.wkv=2;var pb=wedB(Date.now());pb.setDate(pb.getDate()-7);me.weekAck=dstr(pb);me.catchUp=true}
+me.custom={};me.days=me.days||{};me.counts=me.counts||{};me.best=me.best||0;me.log=me.log||[];me.found=me.found||[];me.recent=me.recent||[];
 if(!me.hist){me.weeks={};me.months={};me.log.forEach(function(e){addHist(e[0],e[1])});me.hist=1}
 refreshSkips();me.board.forEach(function(c){if(!c.s&&!T(c.k)){var nk=swapKey();if(nk)c.k=nk}});
 me.score=total();start();save()}

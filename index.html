@@ -152,6 +152,9 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <p class="note">Zum Vergleichen im Team: Stand als Text kopieren und in euren Gruppenchat schicken. Deinen Namen schreibst du im Chat selbst dazu. Eine Woche läuft von Mittwoch 13:00 bis Mittwoch 13:00, dann erscheint der Wochenabschluss.</p>
 <div class="btns" style="grid-template-columns:1fr 1fr"><button class="primary" id="share">Stand kopieren</button><button id="toggleTxt">Text anzeigen</button></div>
 <textarea id="txt" readonly hidden aria-label="Stand als Text"></textarea>
+<p class="note">Falls der Wochenabschluss am Mittwoch bei dir nicht erschienen ist, kannst du die neue Woche hier von Hand starten. Dann stehen die Wochenpunkte auf 0 und du bekommst eine neue Karte.</p>
+<div class="btns" style="grid-template-columns:1fr"><button id="manWeek">Neue Woche von Hand starten</button></div>
+<p class="note" style="font-size:.8rem">Version 5.11.2026</p>
 
 
 
@@ -357,7 +360,7 @@ function weekStart(){return wedB(Date.now()).getTime()}
 function sum(a,b){var s=0;me.log.forEach(function(e){if(e[0]>=a&&e[0]<b)s+=e[1]});return s}
 function stats(){
 var ws=weekStart(),d=new Date(ws);d.setDate(d.getDate()-7);
-return{day:sum(dayStart(),Infinity),week:sum(ws,Infinity),last:sum(d.getTime(),ws)}}
+return{day:sum(dayStart(),Infinity),week:sum(Math.max(ws,me.weekFrom||0),Infinity),last:sum(d.getTime(),ws)}}
 var MON=["Jänner","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"],histMode="w";
 function mkey(d){return d.getFullYear()+"-"+(d.getMonth()+1<10?"0":"")+(d.getMonth()+1)}
 function addHist(ts,d){var wk=dstr(wedB(ts)),mo=mkey(new Date(ts));me.weeks[wk]=(me.weeks[wk]||0)+d;me.months[mo]=(me.months[mo]||0)+d}
@@ -442,7 +445,7 @@ function f2(d){return(d.getDate()<10?"0":"")+d.getDate()+"."+(d.getMonth()+1<10?
 function pendingWeek(){var B=wedB(Date.now());return me.weekAck<dstr(B)?B:null}
 function showWeek(B){
 var a=new Date(B.getTime());a.setDate(a.getDate()-7);var p=new Date(B.getTime());p.setDate(p.getDate()-14);
-var pts=sum(a.getTime(),B.getTime()),prev=sum(p.getTime(),a.getTime());
+var pts=sum(Math.max(a.getTime(),me.weekFrom||0),B.getTime()),prev=sum(p.getTime(),a.getTime());
 $("wkSub").textContent="Woche von Mi "+f2(a)+" bis Mi "+f2(B)+", 13:00";
 $("wkPts").textContent=pts;$("wkPrev").textContent=prev;
 $("wkTxt").value="Streetwork Bingo, Wochenstand (bis Mi "+f2(B)+", 13:00)\nPunkte: "+pts+"\nVorwoche: "+prev;
@@ -463,6 +466,14 @@ var B=pendingWeek()||wedB(Date.now());me.weekAck=dstr(B);me.catchUp=false;
 me.round++;me.score=0;me.banked=0;me.found=[];me.recent=[];sel=-1;newBoard();
 $("wk").hidden=true;var m=document.querySelector("main");m.inert=false;m.removeAttribute("aria-hidden");wkOpen=false;
 render();save();toast("Neue Woche gestartet")};
+var manT=0;
+$("manWeek").onclick=function(){
+var b=$("manWeek");
+if(!manT){b.textContent="Wirklich? Nochmal tippen";manT=setTimeout(function(){manT=0;b.textContent="Neue Woche von Hand starten"},4000);return}
+clearTimeout(manT);manT=0;b.textContent="Neue Woche von Hand starten";
+me.weekAck=dstr(wedB(Date.now()));me.catchUp=false;me.weekFrom=Date.now();
+me.round++;me.score=0;me.banked=0;me.found=[];me.recent=[];sel=-1;newBoard();
+render();save();toast("Neue Woche gestartet");window.scrollTo(0,0)};
 function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek()}
 
 me=load();

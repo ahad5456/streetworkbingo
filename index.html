@@ -68,6 +68,11 @@ canvas#fx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none
 .wkBig span{display:block;margin-top:4px}
 .wkIn h2{margin:0}
 #wkTxt{min-height:128px}
+#team label{display:block;margin:10px 0 4px;font-weight:700}
+#team h3,#wkTeam h3{font-size:1rem;margin:18px 0 8px}
+#team input+label{margin-top:12px}
+.tmine li{align-items:center}
+.tmine button{min-height:36px;padding:2px 10px}
 .wkIn .btns{grid-template-columns:1fr;margin-top:12px}
 .wkIn button.big{min-height:56px;font-size:1.1rem}
 .bingo{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.9);background:var(--sun);color:#1D2733;border-radius:18px;padding:18px 30px;text-align:center;opacity:0;pointer-events:none;z-index:5;transition:opacity .2s,transform .2s;box-shadow:0 8px 30px rgba(0,0,0,.25);max-width:90%}
@@ -138,6 +143,27 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <div class="act" id="act"></div>
 <p class="note">Reihe, Spalte oder Diagonale voll: +2 Bonus. Alle 8 Randfelder (Kreis): +4 Bonus. Ganze Karte voll: +5 Bonus und eine neue Karte.</p>
 
+<section id="team" hidden>
+<h2>Team</h2>
+<div id="tJoin">
+<p class="note" style="margin-top:0">Mit Name und Teamcode siehst du das Ranking der Gruppe und teilst Aufgaben mit allen.</p>
+<label for="tName">Dein Name im Team</label>
+<input id="tName" maxlength="20" autocomplete="off" placeholder="Name oder Spitzname">
+<label for="tCode">Teamcode</label>
+<input id="tCode" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Teamcode">
+<div class="btns" style="grid-template-columns:1fr;margin-top:12px"><button class="primary" id="tGo">Team beitreten</button></div>
+</div>
+<div id="tIn" hidden>
+<div class="tabs" id="tTabs" style="grid-template-columns:1fr 1fr" role="group" aria-label="Ranking"><button data-r="d" aria-pressed="true">Heute</button><button data-r="w" aria-pressed="false">Diese Woche</button></div>
+<ol class="rank" id="tList" style="list-style:none;margin:0;padding:0"></ol>
+<p class="note" id="tInfo" style="margin-top:4px"></p>
+<div class="btns" style="grid-template-columns:1fr 1fr"><button id="tRef">Aktualisieren</button><button id="tLeave">Team verlassen</button></div>
+<h3>Aufgabe fürs ganze Team</h3>
+<div style="display:grid;grid-template-columns:1fr auto;gap:10px"><input id="tTask" maxlength="80" autocomplete="off" placeholder="Was kann man in der Stadt sehen?" aria-label="Neue Aufgabe fürs Team"><button class="primary" id="tAdd">Hinzufügen</button></div>
+<p class="note" id="tTaskInfo" style="margin-top:6px"></p>
+<ul class="top tmine" id="tMine"></ul>
+</div>
+</section>
 <h2>Dein Stand</h2>
 <div class="stats">
 <div class="stat"><b id="sDay">0</b><span>Heute</span></div>
@@ -171,6 +197,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <div class="stats" style="grid-template-columns:1fr">
 <div class="stat"><b id="wkPrev">0</b><span>Vorwoche</span></div>
 </div>
+<div id="wkTeam" hidden><div class="winner" id="wkWin" hidden></div><h3>Ranking der Woche</h3><ol class="rank" id="wkRank" style="list-style:none;margin:0;padding:0"></ol></div>
 <p class="note">Jetzt vergleichen: Stand kopieren und in den Gruppenchat schicken. Danach startet ihr die neue Woche.</p>
 <textarea id="wkTxt" readonly aria-label="Wochenstand als Text"></textarea>
 <p class="note" id="wkCatch" hidden>Dieser Wochenabschluss kommt nachträglich, weil er am Mittwoch um 13:00 auf diesem Handy nicht erschienen ist. Wenn du die neue Woche hier schon gestartet hast, tippe auf „Schon gestartet“.</p>
@@ -323,7 +350,7 @@ clearTimeout(bTimer);bTimer=setTimeout(function(){e.classList.remove("show")},lv
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},2200)}
 function load(){try{var r=localStorage.getItem(KEY);return r?JSON.parse(r):null}catch(e){return null}}
 var warned=false;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(me))}catch(e){if(!warned){warned=true;toast("Speichern im Browser nicht möglich")}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(me))}catch(e){if(!warned){warned=true;toast("Speichern im Browser nicht möglich")}}schedPush()}
 function rnd(n){return Math.floor(Math.random()*n)}
 function T(k){
 if(k.charAt(0)==="b"){var t=TASKS[+k.slice(1)];return t?{t:t[0],p:1}:null}
@@ -397,6 +424,7 @@ $("meInfo").textContent=me.board.filter(function(x){return x.s}).length+"/9 auf 
 var st=stats();$("sDay").textContent=st.day;$("sWeek").textContent=st.week;
 if(!$("hist").hidden)renderHist();
 $("txt").value="Streetwork Bingo\nHeute: "+st.day+" Punkte\nDiese Woche: "+st.week+" Punkte\nLetzte Woche: "+st.last+" Punkte";
+renderTeam();
 }
 
 function mark(i){
@@ -450,6 +478,7 @@ $("wkSub").textContent="Woche von Mi "+f2(a)+" bis Mi "+f2(B)+", 13:00";
 $("wkPts").textContent=pts;$("wkPrev").textContent=prev;
 $("wkTxt").value="Streetwork Bingo, Wochenstand (bis Mi "+f2(B)+", 13:00)\nPunkte: "+pts+"\nVorwoche: "+prev;
 $("wkCatch").hidden=!me.catchUp;$("wkSkip").hidden=!me.catchUp;
+wkB=B;fillWkRank();if(me.team)pull();
 sel=-1;$("wk").hidden=false;var m=document.querySelector("main");m.inert=true;m.setAttribute("aria-hidden","true");wkOpen=true;
 try{$("wkNew").focus()}catch(e){}}
 function checkWeek(){if(!me||wkOpen||$("game").hidden)return;var B=pendingWeek();if(B)showWeek(B)}
@@ -474,12 +503,118 @@ clearTimeout(manT);manT=0;b.textContent="Neue Woche von Hand starten";
 me.weekAck=dstr(wedB(Date.now()));me.catchUp=false;me.weekFrom=Date.now();
 me.round++;me.score=0;me.banked=0;me.found=[];me.recent=[];sel=-1;newBoard();
 render();save();toast("Neue Woche gestartet");window.scrollTo(0,0)};
-function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek()}
+/* ---------- Team (Cloudflare-Worker) ---------- */
+var API="https://bingo-team.aaaaat.workers.dev";
+var TM={rank:"d",busy:false,last:0,err:""},wkB=null,lastSent="",lastSentAt=0,pushT=0;
+function rid(){var s="",c="abcdefghijklmnopqrstuvwxyz0123456789";for(var i=0;i<12;i++)s+=c.charAt(rnd(36));return s}
+function normCode(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40)}
+function api(path,body){
+var o=body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{};
+var req=fetch(API+path,o).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error((j&&j.error)||"Fehler");return j})});
+var to=new Promise(function(_,no){setTimeout(function(){no(new Error("Zeit"))},12000)});
+return Promise.race([req,to])}
+function myPayload(join){
+var st=stats(),B=wedB(Date.now()),pb=new Date(B.getTime());pb.setDate(pb.getDate()-7);
+return{team:me.team.code,id:me.team.id,n:me.team.name,join:!!join,d:dstr(new Date()),dp:st.day,w:dstr(B),wp:st.week,lk:dstr(pb),lp:st.last}}
+function push(force,join){
+if(!API||!me||!me.team)return Promise.resolve();
+var p=myPayload(join),sig=JSON.stringify([p.n,p.d,p.dp,p.w,p.wp,p.lk,p.lp]);
+if(!force&&sig===lastSent&&Date.now()-lastSentAt<30*60000)return Promise.resolve();
+return api("/sync",p).then(function(){lastSent=sig;lastSentAt=Date.now()})}
+function schedPush(){if(!API||!me||!me.team)return;clearTimeout(pushT);pushT=setTimeout(function(){push(false).catch(function(){})},8000)}
+function applyTasks(list){
+var n={},now=Date.now();
+list.forEach(function(t){n["u"+t.k]={t:t.t,by:t.by,bn:t.bn}});
+for(var k in me.custom){var e=me.custom[k];if(!n[k]&&e.at&&now-e.at<120000)n[k]=e}
+me.custom=n}
+function pull(){
+if(!API||!me||!me.team)return Promise.resolve();
+TM.busy=true;renderTeam();
+return api("/state?team="+encodeURIComponent(me.team.code)).then(function(j){
+me.tm=j.members||[];applyTasks(j.tasks||[]);TM.err="";TM.last=Date.now();save()
+}).catch(function(){TM.err="Keine Verbindung zum Team. Es gilt der zuletzt geladene Stand."}).then(function(){
+TM.busy=false;render();fillWkRank()})}
+function rankRows(vf){
+var rows=[];
+(me.tm||[]).forEach(function(m){if(m.id!==me.team.id)rows.push({n:m.n,v:vf(m),you:false})});
+return rows}
+function sortRows(rows){rows.sort(function(a,b){return b.v-a.v||(a.n<b.n?-1:1)});var r=0,prev=null;rows.forEach(function(x,i){if(x.v!==prev){r=i+1;prev=x.v}x.r=r});return rows}
+function rankHtml(rows){
+return rows.map(function(x){var med=x.v>0?(x.r===1?"🥇":x.r===2?"🥈":x.r===3?"🥉":""):"";
+return '<li'+(x.you?' class="you"':'')+'><b>'+(med||x.r)+'</b><span>'+esc(x.n)+(x.you?' (du)':'')+'</span><b>'+x.v+'</b></li>'}).join("")}
+function renderTeam(){
+var box=$("team");if(!box)return;
+box.hidden=!API;if(!API)return;
+var inTeam=!!(me&&me.team);
+$("tJoin").hidden=inTeam;$("tIn").hidden=!inTeam;
+if(!inTeam)return;
+var st=stats(),B=wedB(Date.now()),wk=dstr(B),dk=dstr(new Date()),mode=TM.rank;
+var rows=rankRows(function(m){return mode==="d"?(m.d===dk?m.dp:0):(m.w===wk?m.wp:0)});
+rows.push({n:me.team.name,v:mode==="d"?st.day:st.week,you:true});
+$("tList").innerHTML=rankHtml(sortRows(rows));
+Array.prototype.forEach.call(document.querySelectorAll("#tTabs button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-r")===mode?"true":"false")});
+var t=TM.last?new Date(TM.last):null,hh=t?(t.getHours()<10?"0":"")+t.getHours()+":"+(t.getMinutes()<10?"0":"")+t.getMinutes():"";
+$("tInfo").textContent=(TM.busy?"Lade …":TM.err||(hh?"Aktualisiert um "+hh+" Uhr. ":""))+(TM.busy||TM.err?"":(rows.length<2?"Bisher bist du allein in diesem Team. Stimmt der Teamcode? ":"")+"Teamcode: "+me.team.code);
+var mine=[],all=0;for(var k in me.custom){all++;if(me.custom[k].by===me.team.id)mine.push(k)}
+$("tTaskInfo").textContent=all?("Das Team hat "+all+" eigene "+(all===1?"Aufgabe":"Aufgaben")+" im Spiel."+(mine.length?" Deine kannst du löschen:":"")):"Noch keine eigenen Aufgaben. Jede neue Aufgabe kommt bei allen auf die Karten.";
+$("tMine").innerHTML=mine.map(function(k){return '<li><span>'+esc(me.custom[k].t)+'</span><button data-del="'+esc(k.slice(1))+'" aria-label="Aufgabe löschen">✕</button></li>'}).join("")}
+function fillWkRank(){
+var box=$("wkTeam");if(!box)return;
+if(!API||!me||!me.team||!wkB){box.hidden=true;return}
+var ck=new Date(wkB.getTime());ck.setDate(ck.getDate()-7);ck=dstr(ck);
+var a=new Date(wkB.getTime());a.setDate(a.getDate()-7);
+var mine=sum(Math.max(a.getTime(),me.weekFrom||0),wkB.getTime());
+var rows=rankRows(function(m){return m.w===ck?m.wp:(m.lk===ck?m.lp:0)});
+rows.push({n:me.team.name,v:mine,you:true});
+sortRows(rows);
+$("wkRank").innerHTML=rankHtml(rows);
+var top=rows[0],w=$("wkWin");
+if(top&&top.v>0){var names=rows.filter(function(x){return x.r===1}).map(function(x){return x.n}).join(" & ");w.textContent="🏆 Wochensieg: "+names+" mit "+top.v+" Punkten";w.hidden=false}else w.hidden=true;
+box.hidden=false}
+$("tTabs").addEventListener("click",function(e){var m=e.target.getAttribute("data-r");if(!m)return;TM.rank=m;renderTeam()});
+$("tRef").onclick=function(){push(true).catch(function(){}).then(pull)};
+var leaveT=0;
+$("tLeave").onclick=function(){
+var b=this;
+if(!leaveT){b.textContent="Wirklich? Nochmal tippen";leaveT=setTimeout(function(){leaveT=0;b.textContent="Team verlassen"},4000);return}
+clearTimeout(leaveT);leaveT=0;b.textContent="Team verlassen";
+var t=me.team;api("/leave",{team:t.code,id:t.id}).catch(function(){});
+me.team=null;me.tm=[];me.custom={};render();save();toast("Team verlassen")};
+$("tGo").onclick=function(){
+var n=$("tName").value.replace(/\s+/g," ").trim().slice(0,20),c=normCode($("tCode").value),btn=this;
+if(!n){toast("Bitte einen Namen eingeben");return}
+if(c.length<4){toast("Bitte den Teamcode eingeben");return}
+btn.disabled=true;
+var old=me.team;me.team={code:c,id:rid(),name:n};
+api("/state?team="+encodeURIComponent(c)).then(function(j){
+var alone=!(j.members||[]).length;
+return push(true,true).then(function(){return pull()}).then(function(){toast(alone?"Neues Team angelegt. Stimmt der Code?":"Du bist im Team")})
+}).catch(function(e){me.team=old||null;toast(e.message==="voll"?"Das Team ist voll":"Beitritt hat nicht geklappt, bitte nochmal versuchen")}).then(function(){btn.disabled=false;save();render()})};
+function addTask(){
+if(!me.team)return;
+var t=$("tTask").value.replace(/\s+/g," ").trim();
+if(t.length<3){toast("Bitte eine Aufgabe eintippen");return}
+var btn=$("tAdd");btn.disabled=true;
+api("/task",{team:me.team.code,id:me.team.id,n:me.team.name,text:t}).then(function(j){
+me.custom["u"+j.k]={t:t,by:me.team.id,bn:me.team.name,at:Date.now()};$("tTask").value="";save();render();toast("Aufgabe ist für alle da")
+}).catch(function(e){toast(e.message==="dup"?"Diese Aufgabe gibt es schon":e.message==="voll"?"Das Team hat schon genug Aufgaben":"Hat nicht geklappt, bitte nochmal")}).then(function(){btn.disabled=false})}
+$("tAdd").onclick=addTask;
+$("tTask").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();addTask()}});
+$("tMine").addEventListener("click",function(e){
+var k=e.target.getAttribute("data-del");if(!k||!me.team)return;
+api("/deltask",{team:me.team.code,id:me.team.id,k:k}).then(function(){delete me.custom["u"+k];save();render();toast("Aufgabe gelöscht")}).catch(function(){toast("Hat nicht geklappt, bitte nochmal")})});
+document.addEventListener("visibilitychange",function(){
+if(!me||!me.team)return;
+if(document.hidden)push(false).catch(function(){});
+else if(Date.now()-TM.last>5*60000)pull()});
+setInterval(function(){if(!document.hidden&&me&&me.team&&Date.now()-TM.last>10*60000)pull()},60000);
+function teamStart(){if(me&&me.team){$("tName").value=me.team.name;pull()}else if(me&&me.name)$("tName").value=me.name}
+function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek();teamStart()}
 
 me=load();
 if(me&&Array.isArray(me.board)&&me.board.length===9){
 if(me.wkv!==2){me.wkv=2;var pb=wedB(Date.now());pb.setDate(pb.getDate()-7);me.weekAck=dstr(pb);me.catchUp=true}
-me.custom={};me.days=me.days||{};me.counts=me.counts||{};me.best=me.best||0;me.log=me.log||[];me.found=me.found||[];me.recent=me.recent||[];
+var cu={};if(me.custom)for(var ck in me.custom)if(ck.charAt(0)==="u")cu[ck]=me.custom[ck];me.custom=cu;me.tm=me.tm||[];me.days=me.days||{};me.counts=me.counts||{};me.best=me.best||0;me.log=me.log||[];me.found=me.found||[];me.recent=me.recent||[];
 if(!me.hist){me.weeks={};me.months={};me.log.forEach(function(e){addHist(e[0],e[1])});me.hist=1}
 refreshSkips();me.board.forEach(function(c){if(!c.s&&!T(c.k)){var nk=swapKey();if(nk)c.k=nk}});
 me.score=total();start();save()}

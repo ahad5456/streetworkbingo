@@ -161,7 +161,8 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <h3>Aufgabe fürs ganze Team</h3>
 <div style="display:grid;grid-template-columns:1fr auto;gap:10px"><input id="tTask" maxlength="80" autocomplete="off" placeholder="Was kann man in der Stadt sehen?" aria-label="Neue Aufgabe fürs Team"><button class="primary" id="tAdd">Hinzufügen</button></div>
 <p class="note" id="tTaskInfo" style="margin-top:6px"></p>
-<ul class="top tmine" id="tMine"></ul>
+<button id="tListBtn" aria-expanded="false" aria-controls="tMine" style="width:100%;margin-top:6px">Alle Team-Aufgaben anzeigen</button>
+<ul class="top tmine" id="tMine" hidden></ul>
 </div>
 </section>
 <h2>Dein Stand</h2>
@@ -556,9 +557,10 @@ $("tList").innerHTML=rankHtml(sortRows(rows));
 Array.prototype.forEach.call(document.querySelectorAll("#tTabs button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-r")===mode?"true":"false")});
 var t=TM.last?new Date(TM.last):null,hh=t?(t.getHours()<10?"0":"")+t.getHours()+":"+(t.getMinutes()<10?"0":"")+t.getMinutes():"";
 $("tInfo").textContent=(TM.busy?"Lade …":TM.err||(hh?"Aktualisiert um "+hh+" Uhr. ":""))+(TM.busy||TM.err?"":(rows.length<2?"Bisher bist du allein in diesem Team. Stimmt der Teamcode? ":"")+"Teamcode: "+me.team.code);
-var mine=[],all=0;for(var k in me.custom){all++;if(me.custom[k].by===me.team.id)mine.push(k)}
-$("tTaskInfo").textContent=all?("Das Team hat "+all+" eigene "+(all===1?"Aufgabe":"Aufgaben")+" im Spiel."+(mine.length?" Deine kannst du löschen:":"")):"Noch keine eigenen Aufgaben. Jede neue Aufgabe kommt bei allen auf die Karten.";
-$("tMine").innerHTML=mine.map(function(k){return '<li><span>'+esc(me.custom[k].t)+'</span><button data-del="'+esc(k.slice(1))+'" aria-label="Aufgabe löschen">✕</button></li>'}).join("")}
+var keys=Object.keys(me.custom),all=keys.length,own=keys.filter(function(k){return me.custom[k].by===me.team.id}).length;
+$("tTaskInfo").textContent=all?("Das Team hat "+all+" eigene "+(all===1?"Aufgabe":"Aufgaben")+" im Spiel."+(own?" Nur deine eigenen kannst du löschen.":"")):"Noch keine eigenen Aufgaben. Jede neue Aufgabe kommt bei allen auf die Karten.";
+var open=!$("tMine").hidden;$("tListBtn").textContent=(open?"Aufgabenliste einklappen":"Alle Team-Aufgaben anzeigen")+(all?" ("+all+")":"");$("tListBtn").setAttribute("aria-expanded",open?"true":"false");
+$("tMine").innerHTML=keys.map(function(k){var c=me.custom[k],mine=c.by===me.team.id;return '<li><span>'+esc(c.t)+'<span class="last" style="display:block;color:var(--muted);font-size:.85rem">von '+(mine?'dir':esc(c.bn||"?"))+'</span></span>'+(mine?'<button data-del="'+esc(k.slice(1))+'" aria-label="Aufgabe löschen">✕</button>':'')+'</li>'}).join("")}
 function fillWkRank(){
 var box=$("wkTeam");if(!box)return;
 if(!API||!me||!me.team||!wkB){box.hidden=true;return}
@@ -600,6 +602,7 @@ api("/task",{team:me.team.code,id:me.team.id,n:me.team.name,text:t}).then(functi
 me.custom["u"+j.k]={t:t,by:me.team.id,bn:me.team.name,at:Date.now()};$("tTask").value="";save();render();toast("Aufgabe ist für alle da")
 }).catch(function(e){toast(e.message==="dup"?"Diese Aufgabe gibt es schon":e.message==="voll"?"Das Team hat schon genug Aufgaben":"Hat nicht geklappt, bitte nochmal")}).then(function(){btn.disabled=false})}
 $("tAdd").onclick=addTask;
+$("tListBtn").onclick=function(){var u=$("tMine");u.hidden=!u.hidden;renderTeam()};
 $("tTask").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();addTask()}});
 $("tMine").addEventListener("click",function(e){
 var k=e.target.getAttribute("data-del");if(!k||!me.team)return;

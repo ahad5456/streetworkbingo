@@ -30,9 +30,14 @@ button.primary{background:var(--pri);color:var(--pri-ink)}
 button:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 input{width:100%;min-height:46px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-.me{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--pri);color:var(--pri-ink);border-radius:14px;padding:12px 16px}
-.me .big{font-size:2rem;font-weight:800;line-height:1}
-.me small{display:block;opacity:.85}
+.me{background:var(--pri);color:var(--pri-ink);border-radius:14px;padding:12px 16px}
+.meGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}
+.meGrid span{display:block;font-size:.95rem;opacity:.9;margin-top:2px}
+.me .big{display:block;font-size:2.6rem;font-weight:800;line-height:1}
+.me small{display:block;opacity:.85;text-align:center;margin-top:8px}
+#homeHint{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+#homeHint p{margin:0 0 8px}
+#homeHint button{min-height:40px;padding:4px 14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;display:grid;gap:10px}
 .card.pop{animation:pop .35s}
 @keyframes pop{from{transform:scale(.97);background:var(--sun)}to{transform:none}}
@@ -137,7 +142,8 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 </section>
 
 <section id="game" hidden>
-<div class="me"><div><strong id="meName"></strong><small id="meInfo"></small></div><div class="big" id="meScore">0</div></div>
+<div class="me"><div class="meGrid"><div><b class="big" id="meDay">0</b><span>Heute</span></div><div><b class="big" id="meWeek">0</b><span>Diese Woche</span></div></div><small id="meInfo"></small></div>
+<div id="homeHint" hidden><p>📲 <strong>Tipp:</strong> Lege die App auf deinen Startbildschirm, dann bleibt dein Spielstand sicher. In Chrome: Menü ⋮ und „Zum Startbildschirm hinzufügen" oder „App installieren". Beim iPhone: Teilen-Symbol und „Zum Home-Bildschirm".</p><button id="hintX">Verstanden</button></div>
 <h2>Deine Bingo-Karte</h2>
 <div class="board" id="board"></div>
 <div class="act" id="act"></div>
@@ -145,6 +151,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 
 <section id="team" hidden>
 <h2>Team</h2>
+<div class="card" id="tRestore" hidden style="margin-bottom:12px"><p class="task" id="tRestoreTxt"></p><div class="btns"><button class="primary" id="tRestoreYes">Stand wiederherstellen</button><button id="tRestoreNo">Neu beginnen</button></div></div>
 <div id="tJoin">
 <p class="note" style="margin-top:0">Mit Name und Teamcode siehst du das Ranking der Gruppe und teilst Aufgaben mit allen.</p>
 <label for="tName">Dein Name im Team</label>
@@ -152,6 +159,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <label for="tCode">Teamcode</label>
 <input id="tCode" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Teamcode">
 <div class="btns" style="grid-template-columns:1fr;margin-top:12px"><button class="primary" id="tGo">Team beitreten</button></div>
+<div class="card" id="tAsk" hidden style="margin-top:12px"><p class="task" id="tAskTxt"></p><div class="btns"><button class="primary" id="tAskYes">Ja, das bin ich</button><button id="tAskNo">Anderer Name</button></div></div>
 </div>
 <div id="tIn" hidden>
 <div class="tabs" id="tTabs" style="grid-template-columns:1fr 1fr" role="group" aria-label="Ranking"><button data-r="d" aria-pressed="true">Heute</button><button data-r="w" aria-pressed="false">Diese Woche</button></div>
@@ -420,9 +428,8 @@ if(c.s)h='<div class="card"><p class="task">'+esc(c.t)+'</p><div class="btns"><b
 else{var t=T(c.k);h='<div class="card"><p class="task">'+esc(t?t.t:"")+'</p><div class="btns"><button class="primary" data-a="seen">Gesehen</button><button data-a="swap"'+(me.skips<1?' disabled':'')+'>Tauschen ('+me.skips+')</button></div><button data-a="close">Schließen</button></div>'}
 }
 $("act").innerHTML=h;
-$("meName").textContent="Runde "+me.round;
-$("meScore").textContent=me.score;
-$("meInfo").textContent=me.board.filter(function(x){return x.s}).length+"/9 auf der Karte · "+nLines()+" Reihen · "+me.skips+" Tausche heute übrig";
+var st0=stats();$("meDay").textContent=st0.day;$("meWeek").textContent=st0.week;
+$("meInfo").textContent="Runde "+me.round+" · "+me.board.filter(function(x){return x.s}).length+"/9 auf der Karte · "+nLines()+" Reihen · "+me.skips+" Tausche heute übrig";
 var st=stats();$("sDay").textContent=st.day;$("sWeek").textContent=st.week;
 if(!$("hist").hidden)renderHist();
 $("txt").value="Streetwork Bingo\nHeute: "+st.day+" Punkte\nDiese Woche: "+st.week+" Punkte\nLetzte Woche: "+st.last+" Punkte";
@@ -515,12 +522,13 @@ var o=body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.
 var req=fetch(API+path,o).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error((j&&j.error)||"Fehler");return j})});
 var to=new Promise(function(_,no){setTimeout(function(){no(new Error("Zeit"))},12000)});
 return Promise.race([req,to])}
-function myPayload(join){
+function snapshot(){var o={};for(var k in me)if(k!=="team"&&k!=="tm"&&k!=="custom"&&k!=="tat"&&k!=="catchUp")o[k]=me[k];var t=JSON.stringify(o);return t.length>90000?"":t}
+function myPayload(join,replace){
 var st=stats(),B=wedB(Date.now()),pb=new Date(B.getTime());pb.setDate(pb.getDate()-7);
-return{team:me.team.code,id:me.team.id,n:me.team.name,join:!!join,d:dstr(new Date()),dp:st.day,w:dstr(B),wp:st.week,lk:dstr(pb),lp:st.last}}
-function push(force,join){
+return{team:me.team.code,id:me.team.id,n:me.team.name,join:!!join,replace:!!replace,bk:snapshot(),d:dstr(new Date()),dp:st.day,w:dstr(B),wp:st.week,lk:dstr(pb),lp:st.last}}
+function push(force,join,replace){
 if(!API||!me||!me.team)return Promise.resolve();
-var p=myPayload(join),sig=JSON.stringify([p.n,p.d,p.dp,p.w,p.wp,p.lk,p.lp]);
+var p=myPayload(join,replace),sig=JSON.stringify([p.n,p.d,p.dp,p.w,p.wp,p.lk,p.lp,p.bk]);
 if(!force&&sig===lastSent&&Date.now()-lastSentAt<30*60000)return Promise.resolve();
 return api("/sync",p).then(function(){lastSent=sig;lastSentAt=Date.now()})}
 function schedPush(){if(!API||!me||!me.team)return;clearTimeout(pushT);pushT=setTimeout(function(){push(false).catch(function(){})},8000)}
@@ -583,16 +591,38 @@ if(!leaveT){b.textContent="Wirklich? Nochmal tippen";leaveT=setTimeout(function(
 clearTimeout(leaveT);leaveT=0;b.textContent="Team verlassen";
 var t=me.team;api("/leave",{team:t.code,id:t.id}).catch(function(){});
 me.team=null;me.tm=[];me.custom={};render();save();toast("Team verlassen")};
+function joinFail(old,e){me.team=old||null;toast(e&&e.message==="vergeben"?"Der Name ist im Team schon vergeben":e&&e.message==="voll"?"Das Team ist voll":"Beitritt hat nicht geklappt, bitte nochmal versuchen")}
+function doJoin(n,c,replace,alone){
+var old=me.team;me.team={code:c,id:rid(),name:n};TM.pend=null;
+var pre=replace?api("/restore",{team:c,id:me.team.id,n:n}).catch(function(){return null}):Promise.resolve(null);
+return pre.then(function(rs){
+return push(true,true,replace).then(function(){
+if(rs&&rs.found){try{var sn=JSON.parse(rs.bk);if(sn&&((sn.log||[]).length>(me.log||[]).length||Object.keys(sn.weeks||{}).length>Object.keys(me.weeks||{}).length))TM.pend=sn}catch(e){}}
+return pull()}).then(function(){toast(alone?"Neues Team angelegt. Stimmt der Code?":"Du bist im Team")})
+}).catch(function(e){joinFail(old,e)}).then(function(){save();render();renderRestore()})}
+function renderRestore(){
+var sn=TM.pend,box=$("tRestore");
+if(!sn){box.hidden=true;return}
+var solved=(sn.board||[]).filter(function(x){return x.s}).length;
+$("tRestoreTxt").textContent="Ich habe deinen gespeicherten Stand gefunden (Runde "+(sn.round||1)+", "+solved+"/9 Felder auf der Karte). Möchtest du ihn wiederherstellen?";
+box.hidden=false}
+$("tRestoreYes").onclick=function(){
+var sn=TM.pend;if(!sn)return;
+for(var k in sn){if(k==="team"||k==="tm"||k==="custom")continue;me[k]=sn[k]}
+me.catchUp=false;TM.pend=null;save();render();renderRestore();checkWeek();push(true).catch(function(){});toast("Stand wiederhergestellt")};
+$("tRestoreNo").onclick=function(){TM.pend=null;renderRestore()};
+$("tAskYes").onclick=function(){var a=TM.ask;$("tAsk").hidden=true;TM.ask=null;if(a)doJoin(a.n,a.c,true,false).then(function(){$("tGo").disabled=false})};
+$("tAskNo").onclick=function(){TM.ask=null;$("tAsk").hidden=true;$("tGo").disabled=false;$("tName").focus()};
 $("tGo").onclick=function(){
 var n=$("tName").value.replace(/\s+/g," ").trim().slice(0,20),c=normCode($("tCode").value),btn=this;
 if(!n){toast("Bitte einen Namen eingeben");return}
 if(c.length<4){toast("Bitte den Teamcode eingeben");return}
 btn.disabled=true;
-var old=me.team;me.team={code:c,id:rid(),name:n};
 api("/state?team="+encodeURIComponent(c)).then(function(j){
-var alone=!(j.members||[]).length;
-return push(true,true).then(function(){return pull()}).then(function(){toast(alone?"Neues Team angelegt. Stimmt der Code?":"Du bist im Team")})
-}).catch(function(e){me.team=old||null;toast(e.message==="voll"?"Das Team ist voll":"Beitritt hat nicht geklappt, bitte nochmal versuchen")}).then(function(){btn.disabled=false;save();render()})};
+var ms=j.members||[],same=ms.some(function(m){return String(m.n).toLowerCase()===n.toLowerCase()});
+if(same){TM.ask={n:n,c:c};$("tAskTxt").textContent="Im Team gibt es schon eine Person namens „"+n+"“. Bist du das, zum Beispiel nach einem Datenverlust oder mit einem neuen Handy? Dann übernimmst du ihren Platz im Ranking und kannst deinen gespeicherten Stand zurückholen.";$("tAsk").hidden=false;return}
+return doJoin(n,c,false,!ms.length).then(function(){btn.disabled=false})
+}).catch(function(){toast("Beitritt hat nicht geklappt, bitte nochmal versuchen");btn.disabled=false})};
 function addTask(){
 if(!me.team)return;
 var t=$("tTask").value.replace(/\s+/g," ").trim();
@@ -612,7 +642,13 @@ if(!me||!me.team)return;
 if(document.hidden)push(false).catch(function(){});
 else if(Date.now()-TM.last>5*60000)pull()});
 setInterval(function(){if(!document.hidden&&me&&me.team&&Date.now()-TM.last>10*60000)pull()},60000);
-function teamStart(){if(me&&me.team){$("tName").value=me.team.name;pull()}else if(me&&me.name)$("tName").value=me.name}
+function homeHint(){
+var h=$("homeHint");if(!h)return;
+var sa=false;try{sa=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true}catch(e){}
+var gone=false;try{gone=localStorage.getItem("streetwork-hint-v1")==="1"}catch(e){}
+h.hidden=sa||gone}
+$("hintX").onclick=function(){try{localStorage.setItem("streetwork-hint-v1","1")}catch(e){}$("homeHint").hidden=true};
+function teamStart(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}homeHint();if(me&&me.team){$("tName").value=me.team.name;pull()}else if(me&&me.name)$("tName").value=me.name}
 function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek();teamStart()}
 
 me=load();

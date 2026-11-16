@@ -30,11 +30,9 @@ button.primary{background:var(--pri);color:var(--pri-ink)}
 button:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 input{width:100%;min-height:46px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-.me{background:var(--pri);color:var(--pri-ink);border-radius:14px;padding:12px 16px}
-.meGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}
-.meGrid span{display:block;font-size:.95rem;opacity:.9;margin-top:2px}
-.me .big{display:block;font-size:2.6rem;font-weight:800;line-height:1}
-.me small{display:block;opacity:.85;text-align:center;margin-top:8px}
+.me{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--pri);color:var(--pri-ink);border-radius:14px;padding:12px 16px}
+.me .big{font-size:2rem;font-weight:800;line-height:1}
+.me small{display:block;opacity:.85}
 #homeHint{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
 #homeHint p{margin:0 0 8px}
 #homeHint button{min-height:40px;padding:4px 14px}
@@ -73,6 +71,11 @@ canvas#fx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none
 .wkBig span{display:block;margin-top:4px}
 .wkIn h2{margin:0}
 #wkTxt{min-height:128px}
+.rank li.r4,.rank li.rhead{grid-template-columns:34px 1fr 58px 58px}
+.rank li.r4 b:nth-child(3){font-weight:600;opacity:.8}
+.rank li.rhead{background:none;border:0;min-height:0;padding:0 14px 2px;font-size:.8rem;opacity:.75;box-shadow:none}
+.rank li.rhead b{text-align:right;font-weight:600}
+.rank li.r4 b:nth-child(n+3){text-align:right}
 #team label{display:block;margin:10px 0 4px;font-weight:700}
 #team h3,#wkTeam h3{font-size:1rem;margin:18px 0 8px}
 #team input+label{margin-top:12px}
@@ -142,7 +145,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 </section>
 
 <section id="game" hidden>
-<div class="me"><div class="meGrid"><div><b class="big" id="meDay">0</b><span>Heute</span></div><div><b class="big" id="meWeek">0</b><span>Diese Woche</span></div></div><small id="meInfo"></small></div>
+<div class="me"><div><strong id="meName"></strong><small id="meInfo"></small></div><div class="big" id="meScore">0</div></div>
 <div id="homeHint" hidden><p>📲 <strong>Tipp:</strong> Lege die App auf deinen Startbildschirm, dann bleibt dein Spielstand sicher. In Chrome: Menü ⋮ und „Zum Startbildschirm hinzufügen" oder „App installieren". Beim iPhone: Teilen-Symbol und „Zum Home-Bildschirm".</p><button id="hintX">Verstanden</button></div>
 <h2>Deine Bingo-Karte</h2>
 <div class="board" id="board"></div>
@@ -162,7 +165,6 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <div class="card" id="tAsk" hidden style="margin-top:12px"><p class="task" id="tAskTxt"></p><div class="btns"><button class="primary" id="tAskYes">Ja, das bin ich</button><button id="tAskNo">Anderer Name</button></div></div>
 </div>
 <div id="tIn" hidden>
-<div class="tabs" id="tTabs" style="grid-template-columns:1fr 1fr" role="group" aria-label="Ranking"><button data-r="d" aria-pressed="true">Heute</button><button data-r="w" aria-pressed="false">Diese Woche</button></div>
 <ol class="rank" id="tList" style="list-style:none;margin:0;padding:0"></ol>
 <p class="note" id="tInfo" style="margin-top:4px"></p>
 <div class="btns" style="grid-template-columns:1fr 1fr"><button id="tRef">Aktualisieren</button><button id="tLeave">Team verlassen</button></div>
@@ -428,8 +430,9 @@ if(c.s)h='<div class="card"><p class="task">'+esc(c.t)+'</p><div class="btns"><b
 else{var t=T(c.k);h='<div class="card"><p class="task">'+esc(t?t.t:"")+'</p><div class="btns"><button class="primary" data-a="seen">Gesehen</button><button data-a="swap"'+(me.skips<1?' disabled':'')+'>Tauschen ('+me.skips+')</button></div><button data-a="close">Schließen</button></div>'}
 }
 $("act").innerHTML=h;
-var st0=stats();$("meDay").textContent=st0.day;$("meWeek").textContent=st0.week;
-$("meInfo").textContent="Runde "+me.round+" · "+me.board.filter(function(x){return x.s}).length+"/9 auf der Karte · "+nLines()+" Reihen · "+me.skips+" Tausche heute übrig";
+$("meName").textContent="Runde "+me.round;
+$("meScore").textContent=me.score;
+$("meInfo").textContent=me.board.filter(function(x){return x.s}).length+"/9 auf der Karte · "+nLines()+" Reihen · "+me.skips+" Tausche heute übrig";
 var st=stats();$("sDay").textContent=st.day;$("sWeek").textContent=st.week;
 if(!$("hist").hidden)renderHist();
 $("txt").value="Streetwork Bingo\nHeute: "+st.day+" Punkte\nDiese Woche: "+st.week+" Punkte\nLetzte Woche: "+st.last+" Punkte";
@@ -548,7 +551,10 @@ function rankRows(vf){
 var rows=[];
 (me.tm||[]).forEach(function(m){if(m.id!==me.team.id)rows.push({n:m.n,v:vf(m),you:false})});
 return rows}
-function sortRows(rows){rows.sort(function(a,b){return b.v-a.v||(a.n<b.n?-1:1)});var r=0,prev=null;rows.forEach(function(x,i){if(x.v!==prev){r=i+1;prev=x.v}x.r=r});return rows}
+function sortRows(rows){rows.sort(function(a,b){return b.v-a.v||(b.d||0)-(a.d||0)||(a.n<b.n?-1:1)});var r=0,prev=null;rows.forEach(function(x,i){if(x.v!==prev){r=i+1;prev=x.v}x.r=r});return rows}
+function rankHtml2(rows){
+return rows.map(function(x){var med=x.v>0?(x.r===1?"🥇":x.r===2?"🥈":x.r===3?"🥉":""):"";
+return '<li class="r4'+(x.you?' you':'')+'"><b>'+(med||x.r)+'</b><span>'+esc(x.n)+(x.you?' (du)':'')+'</span><b>'+(x.d||0)+'</b><b>'+x.v+'</b></li>'}).join("")}
 function rankHtml(rows){
 return rows.map(function(x){var med=x.v>0?(x.r===1?"🥇":x.r===2?"🥈":x.r===3?"🥉":""):"";
 return '<li'+(x.you?' class="you"':'')+'><b>'+(med||x.r)+'</b><span>'+esc(x.n)+(x.you?' (du)':'')+'</span><b>'+x.v+'</b></li>'}).join("")}
@@ -558,11 +564,11 @@ box.hidden=!API;if(!API)return;
 var inTeam=!!(me&&me.team);
 $("tJoin").hidden=inTeam;$("tIn").hidden=!inTeam;
 if(!inTeam)return;
-var st=stats(),B=wedB(Date.now()),wk=dstr(B),dk=dstr(new Date()),mode=TM.rank;
-var rows=rankRows(function(m){return mode==="d"?(m.d===dk?m.dp:0):(m.w===wk?m.wp:0)});
-rows.push({n:me.team.name,v:mode==="d"?st.day:st.week,you:true});
-$("tList").innerHTML=rankHtml(sortRows(rows));
-Array.prototype.forEach.call(document.querySelectorAll("#tTabs button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-r")===mode?"true":"false")});
+var st=stats(),B=wedB(Date.now()),wk=dstr(B),dk=dstr(new Date());
+var rows=rankRows(function(m){return m.w===wk?m.wp:0});
+rows.forEach(function(x){var m=(me.tm||[]).filter(function(y){return y.n===x.n&&y.id!==me.team.id})[0];x.d=m&&m.d===dk?m.dp:0});
+rows.push({n:me.team.name,v:st.week,d:st.day,you:true});
+$("tList").innerHTML='<li class="rhead"><b></b><span></span><b>Heute</b><b>Woche</b></li>'+rankHtml2(sortRows(rows));
 var t=TM.last?new Date(TM.last):null,hh=t?(t.getHours()<10?"0":"")+t.getHours()+":"+(t.getMinutes()<10?"0":"")+t.getMinutes():"";
 $("tInfo").textContent=(TM.busy?"Lade …":TM.err||(hh?"Aktualisiert um "+hh+" Uhr. ":""))+(TM.busy||TM.err?"":(rows.length<2?"Bisher bist du allein in diesem Team. Stimmt der Teamcode? ":"")+"Teamcode: "+me.team.code);
 var keys=Object.keys(me.custom),all=keys.length,own=keys.filter(function(k){return me.custom[k].by===me.team.id}).length;
@@ -582,7 +588,6 @@ $("wkRank").innerHTML=rankHtml(rows);
 var top=rows[0],w=$("wkWin");
 if(top&&top.v>0){var names=rows.filter(function(x){return x.r===1}).map(function(x){return x.n}).join(" & ");w.textContent="🏆 Wochensieg: "+names+" mit "+top.v+" Punkten";w.hidden=false}else w.hidden=true;
 box.hidden=false}
-$("tTabs").addEventListener("click",function(e){var m=e.target.getAttribute("data-r");if(!m)return;TM.rank=m;renderTeam()});
 $("tRef").onclick=function(){push(true).catch(function(){}).then(pull)};
 var leaveT=0;
 $("tLeave").onclick=function(){

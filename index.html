@@ -123,6 +123,14 @@ button.gold{width:100%;background:#f5c542;color:#3b0f12;border:2px solid #fff3c4
 .xmas .xsnow{display:block}
 .xsnow i{position:absolute;top:-6%;font-style:normal;color:var(--snow);opacity:.4;animation:advFall linear infinite}
 @media (prefers-reduced-motion:reduce){.xsnow{display:none!important}}
+.sleigh{display:none;position:fixed;top:14%;left:0;z-index:2;pointer-events:none;white-space:nowrap;font-size:34px;line-height:1;transform:translateX(110vw);will-change:transform}
+.sleigh.go{display:block;animation:sleighFly 7.5s linear forwards}
+.sleigh .sg{display:inline-block;position:relative;animation:sleighBob 1.1s ease-in-out infinite}
+.sleigh .sg b{font-weight:400;position:absolute;right:3px;top:-12px;font-size:22px}
+.sleigh .sg u{text-decoration:none;position:absolute;left:100%;top:6px;font-size:14px;opacity:.9;letter-spacing:6px}
+@keyframes sleighFly{from{transform:translateX(110vw)}to{transform:translateX(-130%)}}
+@keyframes sleighBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.sleigh{display:none!important}}
 .advO{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3;background:rgba(14,11,26,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
 .advO[hidden]{display:none}
 .advBox{position:relative;z-index:1;width:min(100%,360px);text-align:center;color:#fff}
@@ -210,6 +218,7 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <body>
 <div id="splash" aria-hidden="true"><svg viewBox="-4 -4 120 120" role="presentation"><rect class="sc" style="animation-delay:0ms" x="0" y="0" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:70ms" x="40" y="0" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:140ms" x="80" y="0" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:210ms" x="0" y="40" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:280ms" x="40" y="40" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:350ms" x="80" y="40" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:420ms" x="0" y="80" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:490ms" x="40" y="80" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:560ms" x="80" y="80" width="32" height="32" rx="8" fill="#FFC93C"/></svg><p>Streetwork Bingo</p></div>
 <div class="xsnow" id="xsnow" aria-hidden="true"></div>
+<div class="sleigh" id="sleigh" aria-hidden="true"><span class="sg">🦌🦌🛷<b>🎅</b><u>✨✨✨</u></span></div>
 <main>
 <div class="advLights xlights" aria-hidden="true"></div>
 <h1>Streetwork Bingo</h1>
@@ -762,6 +771,13 @@ function advPreview(){return /[?&]advent=\d+/.test(location.search)}
 function advToday(){var q=location.search.match(/[?&]advent=(\d+)/);if(q){var n=+q[1];return n>=1&&n<=24?n:0}var d=new Date();return d.getMonth()===11&&d.getDate()<=24?d.getDate():0}
 function advState(){if(advPreview())return TMPADV;var y=new Date().getFullYear();if(!me.adv||me.adv.y!==y)me.adv={y:y,d:{}};return me.adv}
 function advGridOpen(){try{return localStorage.getItem("streetwork-advgrid")==="1"}catch(e){return false}}
+var sleighT=0,sleighLast=0;
+function sleighFly(delay){
+var el=$("sleigh");if(!el||fxReduced()||!document.documentElement.classList.contains("xmas"))return;
+if(Date.now()-sleighLast<120000)return;sleighLast=Date.now();
+clearTimeout(sleighT);el.classList.remove("go");
+sleighT=setTimeout(function(){el.style.top=(10+rnd(14))+"%";void el.offsetWidth;el.classList.add("go")},delay)}
+$("sleigh").addEventListener("animationend",function(e){if(e.animationName==="sleighFly")this.classList.remove("go")});
 var xsnowOn=false;
 function xmasMode(on){
 document.documentElement.classList.toggle("xmas",!!on);
@@ -830,7 +846,7 @@ var gone=false;try{gone=localStorage.getItem("streetwork-hint-v1")==="1"}catch(e
 h.hidden=sa||gone}
 $("hintX").onclick=function(){try{localStorage.setItem("streetwork-hint-v1","1")}catch(e){}$("homeHint").hidden=true};
 function teamStart(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}homeHint();if(me&&me.team){$("tName").value=me.team.name;pull()}else if(me&&me.name)$("tName").value=me.name}
-function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek();teamStart()}
+function start(){$("join").hidden=true;$("game").hidden=false;render();checkWeek();teamStart();sleighFly(3700)}
 
 me=load();
 if(me&&Array.isArray(me.board)&&me.board.length===9){
@@ -840,7 +856,7 @@ if(!me.hist){me.weeks={};me.months={};me.log.forEach(function(e){addHist(e[0],e[
 refreshSkips();me.board.forEach(function(c){if(!c.s&&!T(c.k)){var nk=swapKey();if(nk)c.k=nk}});
 me.score=total();start();save()}
 else{fresh("");start();save()}
-document.addEventListener("visibilitychange",function(){if(!document.hidden&&me){if(refreshSkips())save();render();checkWeek()}});
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&me){if(refreshSkips())save();render();checkWeek();sleighFly(500)}});
 setInterval(checkWeek,5000);
 (function(){var sp=$("splash");function hide(){sp.className="out";setTimeout(function(){sp.hidden=true},600)}
 sp.onclick=hide;setTimeout(hide,Math.max(0,1300-(window.performance&&performance.now?performance.now():0)))})();

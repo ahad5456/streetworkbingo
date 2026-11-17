@@ -76,15 +76,53 @@ canvas#fx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none
 .rank li.rhead{background:none;border:0;min-height:0;padding:0 14px 2px;font-size:.8rem;opacity:.75;box-shadow:none}
 .rank li.rhead b{text-align:right;font-weight:600}
 .rank li.r4 b:nth-child(n+3){text-align:right}
-#adv{margin-top:14px;background:var(--surface);border:2px solid var(--pri);border-radius:16px;padding:14px}
-#adv h2{margin:0 0 2px;font-size:1.2rem}
-.advTask{font-size:1.1rem;font-weight:700;margin:8px 0 12px}
-.advGrid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:14px}
-.advGrid button{min-height:0;aspect-ratio:1;padding:0;font-size:.85rem;font-weight:800;border-radius:8px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
-.advGrid button.today{border-color:var(--pri);background:var(--pri);color:var(--pri-ink)}
-.advGrid button.open{border-color:var(--sun);background:var(--sun);color:#1D2733}
-.advGrid button.lock{opacity:.45}
-.advGrid button.missed{border-style:dashed}
+#adv{margin-top:14px;border:3px solid #d4a017;border-radius:18px;padding:12px 14px 16px;color:#fff;background:radial-gradient(circle at 18% 12%,rgba(255,255,255,.10) 0 1.5px,transparent 2.5px) 0 0/46px 46px,radial-gradient(circle at 70% 60%,rgba(255,255,255,.08) 0 1.5px,transparent 2.5px) 0 0/62px 62px,linear-gradient(180deg,#0f4c2e,#0a3220);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.advLights{height:16px;margin:-4px -6px 4px;background:radial-gradient(circle at 6px 8px,#ff5252 0 4px,transparent 5px) 0 0/48px 16px repeat-x,radial-gradient(circle at 18px 8px,#ffd54f 0 4px,transparent 5px) 0 0/48px 16px repeat-x,radial-gradient(circle at 30px 8px,#69f0ae 0 4px,transparent 5px) 0 0/48px 16px repeat-x,radial-gradient(circle at 42px 8px,#64b5f6 0 4px,transparent 5px) 0 0/48px 16px repeat-x;animation:advTw 1.8s ease-in-out infinite}
+@keyframes advTw{0%,100%{opacity:1}50%{opacity:.55}}
+.advHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#adv h2{margin:0;font-size:1.35rem;color:#fff}
+#advGridBtn{width:100%;margin-top:4px;color:#ffe9a8;border-color:#d4a017}
+.advSub{margin:2px 0 8px;color:#cfe8d5;font-size:.95rem}
+.advBig{position:relative;width:min(100%,300px);height:270px;margin:8px auto 10px;perspective:1000px}
+.advBigStage{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:14px;background:radial-gradient(circle at 50% 45%,#fff3c4,#f6a93b);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.advBigStage .advE{font-size:84px}
+.advBigStage .advE.long{font-size:52px}
+.advBigDoor{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:14px 14px 6px 6px;border:5px solid #f5c542;background:linear-gradient(160deg,#d32f2f,#9a1a22);display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 14px 14px;transform-origin:left center;transition:transform 1.1s cubic-bezier(.2,.8,.2,1);backface-visibility:hidden;box-shadow:inset 0 0 0 3px rgba(255,255,255,.18)}
+.advBigDoor::before{content:"";position:absolute;left:-6px;right:-6px;top:-13px;height:20px;background:#fff;border-radius:14px 14px 16px 16px/12px 12px 18px 18px;opacity:.96}
+.advStar{position:absolute;right:12px;top:12px;font-size:1.3rem}
+.advBigNum{width:58px;height:58px;border-radius:50%;background:#f5c542;color:#4a0f14;display:flex;align-items:center;justify-content:center;font:800 1.9rem/1 "Bricolage Grotesque",system-ui,sans-serif;margin-top:4px;box-shadow:0 2px 0 #b8860b}
+.advBigTask{flex:1;display:flex;align-items:center;justify-content:center;margin:0;text-align:center;font-weight:800;font-size:1.12rem;line-height:1.25;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+button.gold{width:100%;background:#f5c542;color:#3b0f12;border:2px solid #fff3c4;box-shadow:0 2px 0 #b8860b}
+.advBig.open .advBigDoor{transform:rotateY(-118deg);pointer-events:none}
+.advCap2{margin:0 0 4px;text-align:center;font-weight:700;font-size:1.05rem}
+.advDone{margin:0 0 6px;text-align:center;color:#cfe8d5;font-size:.9rem}
+.advGrid[hidden]{display:none}
+.advGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:12px}
+.advGrid button{position:relative;min-height:0;aspect-ratio:1/1.12;padding:0;border-radius:8px 8px 3px 3px;border:2px solid rgba(255,215,100,.75);background:var(--c);color:var(--t);font:800 1.05rem/1 "Bricolage Grotesque",system-ui,sans-serif;display:flex;align-items:center;justify-content:center}
+.advGrid button::after{content:"";position:absolute;left:4px;right:4px;top:4px;bottom:4px;border:1px solid rgba(255,255,255,.4);border-radius:5px;pointer-events:none}
+.advGrid button::before{content:"";position:absolute;right:6px;top:50%;width:5px;height:5px;border-radius:50%;background:#ffd54f;opacity:.9}
+.advGrid button:nth-child(4n+1){--c:#c62828;--t:#fff}
+.advGrid button:nth-child(4n+2){--c:#2e7d32;--t:#fff}
+.advGrid button:nth-child(4n+3){--c:#e0a800;--t:#3b2a00}
+.advGrid button:nth-child(4n){--c:#e9eef5;--t:#7a1018}
+.advGrid button.open{background:#2b1b3f;color:#fff;font-size:1.4rem;border-color:#ffd54f}
+.advGrid button.open::after,.advGrid button.open::before{display:none}
+.advGrid button.today{outline:3px solid #ffd54f;outline-offset:1px;box-shadow:0 0 14px #ffd54f;animation:advGlow 1.6s ease-in-out infinite}
+.advGrid button.lock{filter:brightness(.6) saturate(.75)}
+.advGrid button.missed{opacity:.8;border-style:dashed}
+@keyframes advGlow{0%,100%{box-shadow:0 0 6px #ffd54f}50%{box-shadow:0 0 18px #ffd54f}}
+@media (prefers-reduced-motion:reduce){.advLights,.advGrid button.today{animation:none}.advBigDoor{transition:none}.advBig .advE{animation:none!important}}
+.xlights{display:none;margin:0 -6px 6px}
+.xmas .xlights{display:block}
+:root.xmas{--pri:#B3202A;--pri-ink:#fff;--bg:#F5F0E6;--line:#D8CCBA;--snow:#9db9dc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]).xmas{--pri:#FF8A80;--pri-ink:#2A0A0C;--bg:#0F1D17;--surface:#18281F;--line:#2F4A3B;--snow:#fff}}
+:root[data-theme="dark"].xmas{--pri:#FF8A80;--pri-ink:#2A0A0C;--bg:#0F1D17;--surface:#18281F;--line:#2F4A3B;--snow:#fff}
+.xmas h1::after{content:" 🎄"}
+.xmas .cell[aria-pressed="true"]{box-shadow:inset 0 0 0 2px rgba(255,215,100,.55)}
+.xsnow{display:none;position:fixed;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:1;overflow:hidden}
+.xmas .xsnow{display:block}
+.xsnow i{position:absolute;top:-6%;font-style:normal;color:var(--snow);opacity:.4;animation:advFall linear infinite}
+@media (prefers-reduced-motion:reduce){.xsnow{display:none!important}}
 .advO{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3;background:rgba(14,11,26,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
 .advO[hidden]{display:none}
 .advBox{position:relative;z-index:1;width:min(100%,360px);text-align:center;color:#fff}
@@ -101,19 +139,19 @@ canvas#fx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none
 .advSnow i{position:absolute;top:-8%;font-style:normal;color:#fff;opacity:.8;animation:advFall linear infinite}
 @keyframes advFall{to{transform:translateY(115vh) rotate(200deg)}}
 @keyframes a-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px)}}
-@keyframes a-slide{0%{transform:translateX(-60px)}100%{transform:translateX(60px)}}
+@keyframes a-slide{0%{transform:translateX(-22px)}100%{transform:translateX(22px)}}
 @keyframes a-spin{0%{transform:rotate(-14deg) scale(1)}50%{transform:rotate(14deg) scale(1.12)}100%{transform:rotate(-14deg) scale(1)}}
 @keyframes a-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 @keyframes a-float{0%,100%{transform:translateY(8px)}50%{transform:translateY(-14px)}}
 @keyframes a-pulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.15);filter:brightness(1.3)}}
 @keyframes a-wobble{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
-.advDoor.open .a-bounce{animation:a-bounce .7s ease-in-out .7s infinite}
-.advDoor.open .a-slide{animation:a-slide 1.6s ease-in-out .7s infinite alternate}
-.advDoor.open .a-spin{animation:a-spin 1.1s ease-in-out .7s infinite}
-.advDoor.open .a-shake{animation:a-shake .5s linear .7s infinite}
-.advDoor.open .a-float{animation:a-float 2s ease-in-out .7s infinite}
-.advDoor.open .a-pulse{animation:a-pulse 1.2s ease-in-out .7s infinite}
-.advDoor.open .a-wobble{animation:a-wobble .9s ease-in-out .7s infinite}
+.open .a-bounce{animation:a-bounce .7s ease-in-out .7s infinite}
+.open .a-slide{animation:a-slide 1.6s ease-in-out .7s infinite alternate}
+.open .a-spin{animation:a-spin 1.1s ease-in-out .7s infinite}
+.open .a-shake{animation:a-shake .5s linear .7s infinite}
+.open .a-float{animation:a-float 2s ease-in-out .7s infinite}
+.open .a-pulse{animation:a-pulse 1.2s ease-in-out .7s infinite}
+.open .a-wobble{animation:a-wobble .9s ease-in-out .7s infinite}
 @media (prefers-reduced-motion:reduce){.advPanel{transition:none}.advDoor .advE{animation:none!important}.advSnow{display:none}}
 #team label{display:block;margin:10px 0 4px;font-weight:700}
 #team h3,#wkTeam h3{font-size:1rem;margin:18px 0 8px}
@@ -171,7 +209,9 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 </head>
 <body>
 <div id="splash" aria-hidden="true"><svg viewBox="-4 -4 120 120" role="presentation"><rect class="sc" style="animation-delay:0ms" x="0" y="0" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:70ms" x="40" y="0" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:140ms" x="80" y="0" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:210ms" x="0" y="40" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:280ms" x="40" y="40" width="32" height="32" rx="8" fill="#FFC93C"/><rect class="sc" style="animation-delay:350ms" x="80" y="40" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:420ms" x="0" y="80" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:490ms" x="40" y="80" width="32" height="32" rx="8" fill="#FFFFFF"/><rect class="sc" style="animation-delay:560ms" x="80" y="80" width="32" height="32" rx="8" fill="#FFC93C"/></svg><p>Streetwork Bingo</p></div>
+<div class="xsnow" id="xsnow" aria-hidden="true"></div>
 <main>
+<div class="advLights xlights" aria-hidden="true"></div>
 <h1>Streetwork Bingo</h1>
 <p class="sub">Neun Dinge in der Stadt. Hake sie ab, sammle Reihen. Pro Tag darfst du dreimal Felder tauschen.</p>
 
@@ -187,12 +227,22 @@ textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);bo
 <div class="me"><div><strong id="meName"></strong><small id="meInfo"></small></div><div class="big" id="meScore">0</div></div>
 <div id="homeHint" hidden><p>📲 <strong>Tipp:</strong> Lege die App auf deinen Startbildschirm, dann bleibt dein Spielstand sicher. In Chrome: Menü ⋮ und „Zum Startbildschirm hinzufügen" oder „App installieren". Beim iPhone: Teilen-Symbol und „Zum Home-Bildschirm".</p><button id="hintX">Verstanden</button></div>
 <section id="adv" hidden>
-<h2 id="advTitle">Adventkalender</h2>
-<p class="note" id="advSub" style="margin:0"></p>
-<p class="advTask" id="advTask"></p>
-<div class="btns" style="grid-template-columns:1fr"><button class="primary" id="advSeen">Gesehen (+2 Punkte)</button><button id="advAgain" hidden>Türchen nochmal öffnen</button></div>
-<p class="note" id="advDone" hidden style="margin:8px 0 0">✓ Heute geschafft: +2 Punkte</p>
-<div class="advGrid" id="advGrid"></div>
+<div class="advLights" aria-hidden="true"></div>
+<div class="advHead"><h2 id="advTitle">🎄 Adventkalender</h2></div>
+<p class="advSub" id="advSub"></p>
+<div class="advBig" id="advBig">
+<div class="advBigStage" id="advBigStage"><span class="advE" id="advBigE"></span></div>
+<div class="advBigDoor">
+<span class="advStar" aria-hidden="true">⭐</span>
+<span class="advBigNum" id="advBigNum"></span>
+<p class="advBigTask" id="advTask"></p>
+<button class="gold" id="advSeen">Gesehen (+2 Punkte)</button>
+</div>
+</div>
+<p class="advCap2" id="advBigCap" hidden></p>
+<p class="advDone" id="advDone" hidden></p>
+<button id="advGridBtn" aria-expanded="false" aria-controls="advGrid">Alle 24 Türchen anzeigen</button>
+<div class="advGrid" id="advGrid" hidden></div>
 </section>
 <h2>Deine Bingo-Karte</h2>
 <div class="board" id="board"></div>
@@ -711,17 +761,27 @@ var TMPADV={y:0,d:{}},advLast=null,advT=0;
 function advPreview(){return /[?&]advent=\d+/.test(location.search)}
 function advToday(){var q=location.search.match(/[?&]advent=(\d+)/);if(q){var n=+q[1];return n>=1&&n<=24?n:0}var d=new Date();return d.getMonth()===11&&d.getDate()<=24?d.getDate():0}
 function advState(){if(advPreview())return TMPADV;var y=new Date().getFullYear();if(!me.adv||me.adv.y!==y)me.adv={y:y,d:{}};return me.adv}
+function advGridOpen(){try{return localStorage.getItem("streetwork-advgrid")==="1"}catch(e){return false}}
+var xsnowOn=false;
+function xmasMode(on){
+document.documentElement.classList.toggle("xmas",!!on);
+var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.setAttribute("content",on?"#B3202A":"#5B3FD9");
+if(on&&!xsnowOn&&!fxReduced()){var h="";for(var i=0;i<14;i++)h+='<i style="left:'+rnd(100)+'%;font-size:'+(10+rnd(10))+'px;animation-duration:'+(9+rnd(9))+'s;animation-delay:-'+rnd(14)+'s">❄</i>';$("xsnow").innerHTML=h;xsnowOn=true}}
 function renderAdv(){
 var box=$("adv");if(!box)return;
-var n=advToday();if(!n){box.hidden=true;return}
+var n=advToday();xmasMode(n>0);if(!n){box.hidden=true;return}
 box.hidden=false;
-var st=advState(),done=!!st.d[n],g="";
-$("advTitle").textContent="Adventkalender"+(advPreview()?" (Vorschau)":"");
-$("advSub").textContent="Türchen "+n+" von 24. Die Aufgabe des Tages ist für alle gleich."+(advPreview()?" In der Vorschau gibt es keine Punkte.":"");
-$("advTask").textContent=ADV[n-1].t;
-$("advSeen").hidden=done;$("advAgain").hidden=!done;$("advDone").hidden=!done;
+var st=advState(),done=!!st.d[n],a=ADV[n-1],g="",go=advGridOpen();
+$("advTitle").textContent="🎄 Adventkalender"+(advPreview()?" (Vorschau)":"");
+$("advSub").textContent="Türchen "+n+" von 24 · "+(done?"heute geschafft ✓":"heute noch offen")+(advPreview()?" · Vorschau ohne Punkte":"");
+$("advGrid").hidden=!go;$("advGridBtn").textContent=go?"Türchen einklappen":"Alle 24 Türchen anzeigen";$("advGridBtn").setAttribute("aria-expanded",go?"true":"false");
+$("advBigNum").textContent=n;$("advTask").textContent=a.t;
+var e=$("advBigE");e.textContent=a.e;e.className="advE a-"+a.a+(Array.from(a.e).length>2?" long":"");
+$("advBig").classList.toggle("open",done);
+$("advBigCap").hidden=!done;$("advBigCap").textContent=a.c;
+$("advDone").hidden=!done;$("advDone").textContent="✓ Geschafft: "+a.t+(advPreview()?"":" (+2 Punkte)");
 for(var i=1;i<=24;i++){var c=st.d[i]?"open":i===n?"today":i>n?"lock":"missed";
-g+='<button class="'+c+(i===n&&c==="open"?" today":"")+'" data-i="'+i+'" aria-label="Türchen '+i+(st.d[i]?", geöffnet":i>n?", noch zu":i===n?", heute":", verpasst")+'">'+i+'</button>'}
+g+='<button class="'+c+(i===n&&c==="open"?" today":"")+'" data-i="'+i+'" aria-label="Türchen '+i+(st.d[i]?", geöffnet":i>n?", noch zu":i===n?", heute":", verpasst")+'">'+(st.d[i]?Array.from(ADV[i-1].e)[0]:i)+'</button>'}
 $("advGrid").innerHTML=g}
 function advClose(){
 $("advO").hidden=true;
@@ -749,13 +809,16 @@ var n=advToday();if(!n)return;
 var st=advState();if(st.d[n])return;
 st.d[n]=1;
 if(!advPreview()){me.banked+=2;logDelta(2);me.score=total();save()}
-render();advLast=$("advAgain");
-advOpen(n,"fresh")};
-$("advAgain").onclick=function(){var n=advToday();if(!n)return;advLast=this;advOpen(n,"replay")};
+render();
+if(!fxReduced())fxStart(n===24?2:4);
+toast(advPreview()?"Vorschau, keine Punkte":"+2 Punkte")};
+$("advGridBtn").onclick=function(){try{localStorage.setItem("streetwork-advgrid",advGridOpen()?"0":"1")}catch(e){}renderAdv()};
+$("advBigStage").onclick=function(){var n=advToday();if(n&&advState().d[n]){advLast=this;advOpen(n,"replay")}};
 $("advGrid").addEventListener("click",function(e){
 var b=e.target.closest?e.target.closest("button"):null;if(!b)return;
 var i=+b.getAttribute("data-i"),n=advToday(),st=advState();
 if(i>n){toast("Türchen "+i+" ist noch zu");return}
+if(i===n&&!st.d[i]){$("advBig").scrollIntoView({block:"center",behavior:fxReduced()?"auto":"smooth"});return}
 advLast=b;advOpen(i,st.d[i]?"replay":"missed")});
 $("advClose").onclick=advClose;
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("advO").hidden)advClose()});
